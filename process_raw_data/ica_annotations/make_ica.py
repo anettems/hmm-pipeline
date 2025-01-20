@@ -5,11 +5,13 @@ import pandas as pd
 import os
 
 
+# lfreq pitää olla 1, hfreq voi olla 48
+
 # Read the peak channel csv
 df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
 sessions = ["01"]#, "03", "04"]#, "05"]
 lfreq = 1
-hfreq = 40
+hfreq = 48
 
 # Make run ICA function
 def run_ica(method, raw_or_epochs, n_components = 15, fit_params=None):
@@ -52,4 +54,3 @@ for i_ses, session in enumerate(sessions):
                 os.makedirs(fname.hmm_bids_dir(subject=subject, ses=session) + '/ica/' )
             
             ica.save( fname.ica(subject=subject,ses=session,task = 'rest',lfreq = lfreq, hfreq = hfreq), overwrite = True )
-

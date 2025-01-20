@@ -12,7 +12,7 @@ import mne
 
 from config import subjects_dir
 
-subjects_dir = '/projects/HMM-beta/HMM_beta_sara/processed/MRI/'
+subjects_dir = '/m/nbe/project3/hmmpipeline/processed_data/MRI/'
 #subject = 'sub-01'
 
 ## Coregistration 
@@ -35,4 +35,3 @@ mne.gui.coregistration(subject = 'fsaverage_sara',subjects_dir=subjects_dir)
 # info = mne.io.read_info(test_data)
 # ## surfaces: 'head-dense' = high resolution, 'head' = low reso, 'brain' = pial 
 # mne.viz.plot_alignment(info, coreg, subject=subject, dig=True, meg=['helmet', 'sensors'], subjects_dir=subjects_dir, surfaces='head-dense')
-

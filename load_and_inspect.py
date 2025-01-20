@@ -12,9 +12,9 @@ print(raw.info)  # Display information about the MEG data
 
 # Visualizing the raw data
 print("Plotting raw MEG data...")
-raw.plot()
+#raw.plot()
+raw.plot(duration=5, n_channels=30)
 
 # Loading the empty room noise data (optional, if needed)
 emptyroom = mne.io.read_raw_fif(emptyroom_file, preload=True)
 print("Empty room data loaded.")
-

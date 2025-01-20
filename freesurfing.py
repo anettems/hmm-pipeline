@@ -17,7 +17,7 @@ def ensure_dir(directory):
 
 
 # Set up mri-images for analysis with mne
-for subject in {'sub-06': 'sub-06/'}:
+for subject in {'sub-16C': 'sub-16C/'}:
     ensure_dir(subjects_dir +  subject + '/bem/')
     
     ## BEM
