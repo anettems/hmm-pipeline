@@ -12,11 +12,10 @@ import mne
 
 from config import subjects_dir
 
-subjects_dir = '/m/nbe/project3/hmmpipeline/processed_data/MRI/'
-#subject = 'sub-01'
+subject = 'sub-16C'
 
 ## Coregistration 
-mne.gui.coregistration(subject = 'fsaverage_sara',subjects_dir=subjects_dir)
+mne.gui.coregistration(subject=subject, subjects_dir=subjects_dir)
 
 # 1. Load digitalization source (head shape source) from any tsss file
 # 2. Edit Fiducaials (left side panel)

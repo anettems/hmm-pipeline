@@ -5,12 +5,10 @@ import pandas as pd
 import os
 
 
-# lfreq pitää olla 1, hfreq voi olla 48
-
 # Read the peak channel csv
 df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
 sessions = ["01"]#, "03", "04"]#, "05"]
-lfreq = 1
+lfreq = 1 # lfreq must be min. 1
 hfreq = 48
 
 # Make run ICA function
@@ -28,14 +26,16 @@ for i_ses, session in enumerate(sessions):
     print("SESSION: ", session)
     for i_sub, row in df_subjects.iterrows():
         subject = row["subject"]
+        print(subject)
         
         #if subject != 'sub-15':
         mfilter_path = fname.raw(
             subject=subject,
             ses=session,
-            task="rest",
+            task="eo",
             proc="raw_meg_tsss_mc_mfilter",
         )
+        print(mfilter_path)
 
         if os.path.exists(mfilter_path):  # and not os.path.exists(op_path):
 
@@ -54,3 +54,4 @@ for i_ses, session in enumerate(sessions):
                 os.makedirs(fname.hmm_bids_dir(subject=subject, ses=session) + '/ica/' )
             
             ica.save( fname.ica(subject=subject,ses=session,task = 'rest',lfreq = lfreq, hfreq = hfreq), overwrite = True )
+            print("ICA saved")

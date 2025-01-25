@@ -27,8 +27,8 @@ df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
 sessions = ["01"]#, "02", "03", "04", "05"]
 run = "01"
 proc = proc_scimeg
-lfreq = 13
-hfreq = 30
+lfreq = 0.1
+hfreq = 48
 sfreq=200
 
 
@@ -57,7 +57,7 @@ for i, row in df_subjects.iterrows():
         raw = mne.io.read_raw_fif(mfilter_path).load_data().filter(1,40)
         
         # Load ica and apply
-        ica = mne.preprocessing.read_ica( fname.ica(subject=subject,ses=ses,task = 'rest',lfreq='1',hfreq='40') )
+        ica = mne.preprocessing.read_ica( fname.ica(subject=subject,ses=ses,task = 'rest',lfreq=lfreq,hfreq=hfreq) )
         ica.apply(raw)
 
         # Read annotation and reject

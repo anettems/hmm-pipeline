@@ -13,8 +13,8 @@ df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
 sessions = ["01"]#, "02", "03", "04", "05"]
 run = "01"
 proc = proc_scimeg
-lfreq = 13
-hfreq = 30
+lfreq = 0.1
+hfreq = 48
 
 
 for i, row in df_subjects.iterrows():
