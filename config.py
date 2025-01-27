@@ -141,19 +141,18 @@ fname.add(
 )
 
 
-# Save .mat file
+# Save .npy file
 fname.add(
-    "ch_names_mat",
-    "{megprocessed_dir}/{ch_type}/{subject}_ch_names_{n_sensors}_sens_{lr_side}.mat",
+    "ch_names_npy",
+    "{megprocessed_dir}/{ch_type}/{subject}_ch_names_{n_sensors}_sens_{lr_side}.npy",
 )
-# fname.add('data_mat','{megprocessed_dir}/{ch_type}/{subject}_peak_ch_data_{lr_side}.mat' )
 fname.add(
     "data_full_freq",
-    "{megprocessed_dir}/{ch_type}/{subject}_mat_data_{lr_side}_{n_sensors}_sens_{l_freq}_{h_freq}_ff.mat",
+    "{megprocessed_dir}/{ch_type}/{subject}_npy_data_{lr_side}_{n_sensors}_sens_{l_freq}_{h_freq}_ff.npy",
 )
 fname.add(
-    "data_mat",
-    "{megprocessed_dir}/{ch_type}/{subject}_lfreq-{l_freq}_hfreq-{h_freq}_mat.mat",
+    "data_npy",
+    "{megprocessed_dir}/{ch_type}/{subject}_lfreq-{l_freq}_hfreq-{h_freq}_npy.npy",
 )
 
 

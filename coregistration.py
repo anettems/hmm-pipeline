@@ -12,7 +12,7 @@ import mne
 
 from config import subjects_dir
 
-subject = 'sub-16C'
+subject = 'fsaverage_sara' # 'sub-16C'
 
 ## Coregistration 
 mne.gui.coregistration(subject=subject, subjects_dir=subjects_dir)

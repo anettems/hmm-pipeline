@@ -77,7 +77,7 @@ for i, row in df_subjects.iterrows():
 
         fwd = mne.make_forward_solution(
             info,
-            trans=fname.trans(subject= subject, ses=ses, task=task),
+            trans=fname.trans(subject=subject, ses=ses, task=task),
             src=subject_src,
             bem=bem,
             meg=True,

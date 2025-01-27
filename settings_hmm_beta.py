@@ -9,7 +9,7 @@ Config file
 Configuration parameters for naming.
 """
 # Task
-task = "restEO"
+task = "eo" # "restEO" ?
 
 # Session
 sessions = ["01"]  # ['01']#,'02']
