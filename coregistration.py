@@ -9,13 +9,28 @@ export FREESURFER_HOME=/work/modules/Ubuntu/14.04/amd64/t314/freesurfer/6.0.0
 
 """
 import mne
-
 from config import subjects_dir
+
+""""
+import pandas as pd
+
+# Coregistration of all subjects and all sessions
+
+df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
+sessions = ["01"]#, "03", "04", "05"]
+
+for i, row in df_subjects.iterrows():
+    subject = row["subject"]
+    for ses in sessions:
+        mne.gui.coregistration(subject=subject, subjects_dir=subjects_dir)  """        
+
+## Coregistration 
 
 subject = 'fsaverage_sara' # 'sub-16C'
 
 ## Coregistration 
 mne.gui.coregistration(subject=subject, subjects_dir=subjects_dir)
+
 
 # 1. Load digitalization source (head shape source) from any tsss file
 # 2. Edit Fiducaials (left side panel)
