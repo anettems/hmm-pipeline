@@ -152,7 +152,7 @@ fname.add(
 )
 fname.add(
     "data_npy",
-    "{megprocessed_dir}/{ch_type}/{subject}_ses-{ses}_lfreq-{l_freq}_hfreq-{h_freq}_npy.npy",
+    "{megprocessed_dir}/{ch_type}/{subject}_lfreq-{l_freq}_hfreq-{h_freq}_npy.npy",
 )
 
 
