@@ -1,16 +1,13 @@
 from config import fname
-from settings_hmm_beta import task
+from settings_hmm_beta import (task, sessions, lfreq, hfreq)
 
 import pandas as pd
 import mne
 import os
 
 
-# Read the peak channel csv
-df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
-sessions = ["01"]#, "03", "04", "05"]
-lfreq = 0.1
-hfreq = 48
+# Read the subject txt file
+df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
 for i, row in df_subjects.iterrows():
     subject = row["subject"]

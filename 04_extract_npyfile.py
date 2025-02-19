@@ -2,23 +2,18 @@ import mne
 import pandas as pd
 import os
 
-from settings_hmm_beta import proc_scimeg, task
+from settings_hmm_beta import (proc_scimeg, task, lfreq, hfreq, sessions, pc_type)
 from config import (fname, subjects_dir, spacing)
 import numpy as np
 
 
-
-# Read the peak channel csv
-df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
-sessions = ["01"]#, "02", "03", "04", "05"]
+# Read the subject txt file
+df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
 proc = proc_scimeg
-lfreq = 0.1
-hfreq = 48
-
 
 # Get labels for FreeSurfer 'aparc_sub' cortical parcellation
-labels_parc = mne.read_labels_from_annot(subject = 'fsaverage_sara', parc = 'aparc_sub', subjects_dir=subjects_dir)
+labels_parc = mne.read_labels_from_annot(subject = 'fsaverage_sara', parc = pc_type, subjects_dir=subjects_dir)
 lh_parc = [ lab for lab in labels_parc if lab.hemi == 'lh']
 
 # Get source space from the file corresponding to the template subject
@@ -33,8 +28,9 @@ for i, row in df_subjects.iterrows():
     for ses in sessions:
         print('Processing session: ', ses)
         
-        if not os.path.exists(fname.megprocessed_dir(subject=subject, ses=ses + '/source-ave/')):
-            os.makedirs(fname.megprocessed_dir(subject=subject, ses=ses + '/source-ave/'))
+        directory = os.path.join(fname.megprocessed_dir(subject=subject, ses=ses), pc_type)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
         # Load the source estimate file for the given subject and session
         #stc_fname_ave = fname.stc_average_nht(subject=subject, ses = ses, task= task)
@@ -53,7 +49,7 @@ for i, row in df_subjects.iterrows():
         # Save the extracted time courses of source estimates as a .npy file
         npy_file_path = fname.data_npy(
             subject=subject,
-            ch_type="source-ave",
+            pc_type=pc_type,
             ses=ses,
             l_freq=str(lfreq),
             h_freq=str(hfreq),

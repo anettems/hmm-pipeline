@@ -8,8 +8,9 @@ Config file
 
 Configuration parameters for naming.
 """
+
 # Task
-task = "eo" # "restEO" ?
+task = "eo" 
 
 # Session
 sessions = ["01"]  # ['01']#,'02']
@@ -30,17 +31,17 @@ ica_method = "fastica"
 ica_epoch_tmin, ica_epoch_tmax = -0.2, 3.5
 
 # proc
-proc_scimeg = "raw_meg_tsss_mc"
+proc_scimeg = "raw_meg_tsss_mc_mfilter"
 
 
 # Model parameters:
 lfreq = 0.1
+lfreq_ica = 1
 hfreq = 48
 n_labels = 450 # left: 226, right: 224, both: 450
 lag = 8
 job_id = "_job_source_2"
-ch_type = 'source-ave'
-side = "both"
+pc_type = 'aparc_sub'
 
 # State mapping
 state_mapping = {'low': 'state3',

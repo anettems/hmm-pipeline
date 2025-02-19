@@ -1,15 +1,15 @@
-from config import fname
-
 import mne
 import pandas as pd
 import os
 
+from config import (fname)
+from settings_hmm_beta import (proc_scimeg, task, sessions, lfreq_ica, hfreq, ica_method)
 
-# Read the peak channel csv
-df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
-sessions = ["01"]#, "03", "04"]#, "05"]
-lfreq = 1 # lfreq must be min. 1
-hfreq = 48
+lfreq = lfreq_ica
+
+# Read the subject txt file
+df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
+
 
 # Make run ICA function
 def run_ica(method, raw_or_epochs, n_components = 15, fit_params=None):
@@ -28,12 +28,11 @@ for i_ses, session in enumerate(sessions):
         subject = row["subject"]
         print(subject)
         
-        #if subject != 'sub-15':
         mfilter_path = fname.raw(
             subject=subject,
             ses=session,
-            task="eo",
-            proc="raw_meg_tsss_mc_mfilter",
+            task=task,
+            proc=proc_scimeg,
         )
         print(mfilter_path)
 
@@ -46,12 +45,12 @@ for i_ses, session in enumerate(sessions):
 
             raw.filter(lfreq,hfreq).resample(sfreq=200)
             
-            ica=run_ica('fastica', raw, n_components=50)
+            ica=run_ica(ica_method, raw, n_components=50)
             ica.plot_components()
             ica.plot_sources(raw, block=True)
 
             if not os.path.exists(fname.hmm_bids_dir(subject=subject, ses=session) + '/ica/'):
                 os.makedirs(fname.hmm_bids_dir(subject=subject, ses=session) + '/ica/' )
             
-            ica.save( fname.ica(subject=subject,ses=session,task = 'rest',lfreq = lfreq, hfreq = hfreq), overwrite = True )
+            ica.save( fname.ica(subject=subject,ses=session,task = task,lfreq = lfreq, hfreq = hfreq), overwrite = True )
             print("ICA saved")

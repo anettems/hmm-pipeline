@@ -13,18 +13,12 @@ import mne
 import os
 import pandas as pd
 
-from config import (fname)
-from settings_hmm_beta import proc_scimeg, task
+from config import fname
+from settings_hmm_beta import (proc_scimeg, task, sessions, lfreq, hfreq)
 
 
-# Read the peak channel csv
-df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
-
-sessions = ["01"]#, "02", "03", "04", "05"]
-run = "01"
-proc = proc_scimeg
-lfreq = 0.1
-hfreq = 48
+# Read the subject txt file
+df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
 
 # Loop for processing all subjects and all sessions
@@ -39,12 +33,12 @@ for i, row in df_subjects.iterrows():
             subject=subject,
             ses=ses,
             task=task,
-            proc="raw_meg_tsss_mc_mfilter",
+            proc=proc_scimeg,
             )
         
         
         # Filtering of raw MEG data
-        raw = mne.io.read_raw_fif(mfilter_path).load_data().filter(lfreq,hfreq) # .filter(13,30)
+        raw = mne.io.read_raw_fif(mfilter_path).load_data().filter(lfreq,hfreq)
         raw.plot(block=True)
         
         # Annotation: mark artifacts or noisy intervals in the data

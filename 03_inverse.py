@@ -16,20 +16,14 @@ sys.path.append(parent_dir)
 
 from functions import reject_bad_segs
 from config import (fname, spacing)
-from settings_hmm_beta import proc_scimeg, task
+from settings_hmm_beta import (proc_scimeg, task, lfreq, lfreq_ica, hfreq, sessions)
 from mne.minimum_norm import make_inverse_operator, apply_inverse_raw
 
 
+# Read the subject txt file
+df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
-# Read the peak channel csv
-df_subjects = pd.read_csv("subject_text_files/test.txt", names=["subject"])
-
-sessions = ["01"]#, "02", "03", "04", "05"]
 run = "01"
-proc = proc_scimeg
-lfreq = 0.1
-lfreqIca = 1
-hfreq = 48
 sfreq=200
 
 
@@ -51,14 +45,14 @@ for i, row in df_subjects.iterrows():
             subject=subject,
             ses=ses,
             task=task,
-            proc="raw_meg_tsss_mc_mfilter",
+            proc=proc_scimeg,
             )
         
         
         raw = mne.io.read_raw_fif(mfilter_path).load_data().filter(1,40)
         
         # Load ica and apply
-        ica = mne.preprocessing.read_ica( fname.ica(subject=subject,ses=ses,task = 'rest',lfreq=lfreqIca,hfreq=hfreq) )
+        ica = mne.preprocessing.read_ica( fname.ica(subject=subject,ses=ses,task=task,lfreq=lfreq_ica,hfreq=hfreq) )
         ica.apply(raw)
 
         # Read annotation and reject

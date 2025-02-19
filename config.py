@@ -26,7 +26,7 @@ N_JOBS = 4
 
 
 ###############################################################################
-# Folders (TODO: decide on folder structure)
+# Folders
 
 
 # Study path and processed path 
@@ -47,11 +47,9 @@ subjects_dir_ave = os.path.join(processed_dir, "MRI/")
 
 
 ###############################################################################
-# Subject-codes for freesurfing
 
-subject_info = {"sub-16C": "sub-16C/"}
-# or: read all subjects from folder-names
-# or: place subjects in task-specific settings
+# Txt file which contains all subjects
+subjects_file = os.path.join(study_path, "subject_text_files/test.txt")
 
 ###############################################################################
 # Templates for filenames
@@ -59,6 +57,8 @@ fname = FileNames()
 
 # Some directories<<<<<<<<<<<<<<<<<<<<<<<<<
 fname.add("data_path", data_path)
+fname.add("subjects_txt", subjects_file)
+
 fname.add("megbids_dir", "{data_path}/{subject}/ses-{ses}/meg")
 fname.add("processed_dir", processed_dir)
 fname.add("megprocessed_dir", "{processed_dir}/{subject}/ses-{ses}/")
@@ -143,16 +143,8 @@ fname.add(
 
 # Save .npy file
 fname.add(
-    "ch_names_npy",
-    "{megprocessed_dir}/{ch_type}/{subject}_ch_names_{n_sensors}_sens_{lr_side}.npy",
-)
-fname.add(
-    "data_full_freq",
-    "{megprocessed_dir}/{ch_type}/{subject}_npy_data_{lr_side}_{n_sensors}_sens_{l_freq}_{h_freq}_ff.npy",
-)
-fname.add(
     "data_npy",
-    "{megprocessed_dir}/{ch_type}/{subject}_lfreq-{l_freq}_hfreq-{h_freq}_npy.npy",
+    "{megprocessed_dir}/{pc_type}/{subject}_lfreq-{l_freq}_hfreq-{h_freq}_npy.npy",
 )
 
 
