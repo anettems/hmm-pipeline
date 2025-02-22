@@ -2,7 +2,7 @@ import mne
 import pandas as pd
 import os
 
-from settings_hmm_beta import (proc_scimeg, task, lfreq, hfreq, sessions, pc_type)
+from settings_hmm_beta import (task, lfreq, hfreq, sessions, pc_type)
 from config import (fname, subjects_dir, spacing)
 import numpy as np
 
@@ -10,11 +10,9 @@ import numpy as np
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
-proc = proc_scimeg
 
 # Get labels for FreeSurfer 'aparc_sub' cortical parcellation
 labels_parc = mne.read_labels_from_annot(subject = 'fsaverage_sara', parc = pc_type, subjects_dir=subjects_dir)
-lh_parc = [ lab for lab in labels_parc if lab.hemi == 'lh']
 
 # Get source space from the file corresponding to the template subject
 fname_src = fname.src(hmm_bids_dir=fname.hmm_bids_dir(subject='fsaverage_sara', ses='01'), subject='fsaverage_sara', spacing=spacing)
@@ -55,5 +53,6 @@ for i, row in df_subjects.iterrows():
             h_freq=str(hfreq),
         )
         np.save(npy_file_path, label_ts_fsaverage.T)
+        print("Npy file saved")
         
      

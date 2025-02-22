@@ -38,6 +38,7 @@ proc_scimeg = "raw_meg_tsss_mc_mfilter"
 lfreq = 0.1
 lfreq_ica = 1
 hfreq = 48
+sfreq = 200 # Sampling frequency
 n_labels = 450 # left: 226, right: 224, both: 450
 lag = 8
 job_id = "_job_source_2"

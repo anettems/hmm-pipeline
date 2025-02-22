@@ -32,12 +32,13 @@ for ses in sessions:
     # Create folder if it does not exist
     if not os.path.exists(fname.hmm_bids_dir(subject=subject, ses=ses) + '/forward/'):  
         os.makedirs(fname.hmm_bids_dir(subject=subject,ses=ses) + '/forward/')
+        print("Forward directory created for template subject.")
     
     megdir=fname.hmm_bids_dir(subject=subject, ses=ses)
     
     if os.path.exists(fname.src(hmm_bids_dir=megdir, subject=subject,spacing=spacing)):
+        print("Source space file already found for template subject. Reading to verify.")
         subject_src = mne.read_source_spaces(fname.src(hmm_bids_dir=megdir, subject=subject,spacing=spacing))
-        bem = mne.read_bem_solution(fname.bem_sol(hmm_bids_dir=megdir, subject=subject,ntri=ntri))
     else:
         subject_src = mne.setup_source_space(subject=subject, spacing=spacing,
                                     subjects_dir=subjects_dir_ave,

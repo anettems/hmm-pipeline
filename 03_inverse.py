@@ -35,7 +35,7 @@ for i, row in df_subjects.iterrows():
 
         # Read the forward model, one model has been created for each session
         fwd = mne.read_forward_solution(fname.fwd(subject=subject,ses=ses,task=task, run=run, spacing=spacing))
-        fwd = mne.convert_forward_solution(fwd, surf_ori=True) # do or don't?
+        fwd = mne.convert_forward_solution(fwd, surf_ori=True)
 
         # Read the noise covariance matrix
         noise_cov = mne.read_cov(fname.noise_cov(subject=subject, ses=ses, task=task, lfreq=lfreq, hfreq=hfreq))
