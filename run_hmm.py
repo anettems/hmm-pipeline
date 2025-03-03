@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 from glhmm import glhmm, preproc, utils, graphics
 from config import fname
-from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions)
+from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag)
 from hmm_visuals import (
     plot_viterbi_path,
     visualize_state_means)
@@ -33,6 +33,8 @@ df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 X_list = []         # list to store each subject's data
 indices_list = []   # to store start/end indices for each subject in the concatenated data
 start = 0
+
+print("\n------------- Data processing begins -------------\n")
 
 for i, row in df_subjects.iterrows():
     subject = row["subject"]
@@ -62,62 +64,85 @@ for i, row in df_subjects.iterrows():
 data = np.concatenate(X_list, axis=0)
 indices = np.array(indices_list)
 
-print(f"Loaded and concatenated data from {df_subjects.shape[0]} subjects.")
+print(f"\nLoaded and concatenated data from {df_subjects.shape[0]} subjects.")
 print("Data shape:", data.shape)
 print("Indices shape:", indices.shape)
 
-# Preprocess the data (e.g., standardisation) as in the glhmm example.
+# ===========================
+# 3. DATA PREPROCESSING FOR TDE-HMM
+# ===========================
+
+n_pca = 20
+
+# Preprocess the data
 # The preprocess_data function expects (data, indices) and returns the (processed_data, _)
-data_processed, indices_new, log= preproc.preprocess_data(data, indices, pca=150, post_standardise=True)
-print("Data preprocessed. 150 parcels kept after PCA.")
+data_processed, indices_new, log = preproc.preprocess_data(data, indices, pca=n_pca, post_standardise=True)
+print("\nData preprocessed. PCA applied with this number of parcels: ", n_pca)
 print("Data shape:", data_processed.shape)
 print("Indices shape:", indices_new.shape)
 
 
-X, Y, indices_ar, connectivity_ar = preproc.build_data_autoregressive(
+# Time-delay embedding
+
+# Define the number of lags (= window size)
+lag_val =list(range(-7, 8, 1))
+
+# Build the time-delay embedded data
+data_tde, indices_tde = preproc.build_data_tde(
     data_processed,
     indices_new,
-    autoregressive_order=1,
-    connectivity=None,
-    center_data=True
+    lag_val
 )
 
-print("Data built for the autoregressive model.")
-    
+# Convert indices to integer type
+indices_tde = indices_tde.astype(int)
+
+print("\nData built for the time-delay embedded HMM model.")
+print("Concatenated & preprocessed TDE data shape:", data_tde.shape)
+print("Updated TDE time stamp indices shape:", indices_tde.shape)
     
 
 # ===========================
-# 3. INITIALISE & TRAIN THE HMM
+# 4. INITIALISE & TRAIN THE HMM
 # ===========================
+
+print("\n------------- Initializing HMM -------------\n")
 
 hmm = glhmm.glhmm(
     K=K,
     covtype='full',
-    model_mean='state',
-    model_beta='state',
+    model_beta='no',
     preproclog=log
 )
 
 # Optionally, inspect hyperparameters:
-print("Hyperparameters:")
+print("\nHyperparameters of HMM model:")
 print(hmm.hyperparameters)
 
-# Train the HMM.
-# Note: The glhmm.train method accepts:
-#     X=None, Y=<concatenated data>, indices=<2D array specifying [start, end] for each subject/session>
 
+# Train the HMM.
+
+print("\n------------- TDE-HMM model training begins -------------\n")
 # Set a seed for reproducibility
 np.random.seed(123)
 
-hmm.train(X=X, Y=Y, indices=indices_ar)
+options = {
+    "gpu_acceleration": 1,  # Enable GPU when >= 1
+    "gpuChunks": 1         # Split data if needed for large datasets
+}
 
-print("AR HMM model trained")
+Gamma_tde, Xi, FE = hmm.train(X=None, Y=data_tde, indices=indices_tde, options=options)
+
+print("\n------------- TDE-HMM model trained-------------\n")
 
 # ===========================
 # 4. OUTPUT EXTRACTION & VISUALISATION
 # ===========================
+# Gamma extraction
+
+
 # Extract the Viterbi path (discrete state sequence) using decode.
-vpath = hmm.decode(X=X, Y=Y, indices=indices_ar, viterbi=True)
+#vpath = hmm.decode(X=data_tde, indices=indices_tde, viterbi=True)
 
 """
 # Retrieve state means using get_means() (shape: [n_features, K])
