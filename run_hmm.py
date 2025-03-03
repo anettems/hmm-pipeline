@@ -72,7 +72,7 @@ print("Indices shape:", indices.shape)
 # 3. DATA PREPROCESSING FOR TDE-HMM
 # ===========================
 
-n_pca = 20
+n_pca = 50
 
 # Preprocess the data
 # The preprocess_data function expects (data, indices) and returns the (processed_data, _)
