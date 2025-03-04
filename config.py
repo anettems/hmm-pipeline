@@ -165,16 +165,5 @@ fname.add(
     'annot', "{hmm_bids_dir}/annot/{subject}_ses-{ses}_task-{task}_lfreq-{lfreq}-hfreq-{hfreq}-annot.fif"
 )
 
-# hmm-dual
-fname.add(
-    "hmm_dual", "{processed_dir}/{group_or_single}/{sensor_type}/{subject}/dual_hmm_ses_{session}{job_id}.mat"
-)
-fname.add(
-    "FO_dual", "{processed_dir}/{group_or_single}/{sensor_type}/{subject}/FO{job_id}_ses_{session}.mat"
-)
-fname.add(
-    "SLT_dual", "{processed_dir}/{group_or_single}/{sensor_type}/{subject}/SLT_parameters{job_id}_ses_{session}.mat"
-)
-fname.add(
-    "spetra_true", "{processed_dir}/{group_or_single}/{sensor_type}/{subject}/true_spectra_{session}{job_id}.mat"
-)
+# TDE-HMM object and the key outputs 
+fname.add("tde_hmm_ob", "{processed_dir}/group/tde-hmm/sensors_concat_group{job_id}.npz")

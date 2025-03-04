@@ -19,10 +19,6 @@ job_id = '_job_source_2'  # Change to avoid overwriting the files
 
 K = 6  # number of HMM states
 
-# Sampling frequency and frequency band (for spectral estimation later)
-fs = sfreq
-
-
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
@@ -72,12 +68,10 @@ print("Indices shape:", indices.shape)
 # 3. DATA PREPROCESSING FOR TDE-HMM
 # ===========================
 
-n_pca = 50
-
 # Preprocess the data
 # The preprocess_data function expects (data, indices) and returns the (processed_data, _)
-data_processed, indices_new, log = preproc.preprocess_data(data, indices, pca=n_pca, post_standardise=True)
-print("\nData preprocessed. PCA applied with this number of parcels: ", n_pca)
+data_processed, indices_new, log = preproc.preprocess_data(data, indices, pca=0.99, post_standardise=True)
+print("\nData preprocessed.")
 print("Data shape:", data_processed.shape)
 print("Indices shape:", indices_new.shape)
 
@@ -138,14 +132,15 @@ print("\n------------- TDE-HMM model trained-------------\n")
 # ===========================
 # 4. OUTPUT EXTRACTION & VISUALISATION
 # ===========================
-# Gamma extraction
+
+# Gamma extraction?
 
 
-# Extract the Viterbi path (discrete state sequence) using decode.
-#vpath = hmm.decode(X=data_tde, indices=indices_tde, viterbi=True)
+# Viterbi path (discrete state sequence)
+vpath = hmm.decode(X=None, Y=data_tde, indices=indices_tde, viterbi=True)
 
-"""
-# Retrieve state means using get_means() (shape: [n_features, K])
+
+"""# Retrieve state means using get_means() (shape: [n_features, K])
 q = X_concat.shape[1] # the number of parcels/channels
 K = hmm.hyperparameters["K"] # the number of states
 state_means = np.zeros(shape=(q, K))
@@ -153,12 +148,6 @@ state_means = hmm.get_means()
 
 # Retrieve the transition probability matrix
 TP = hmm.P.copy()
-
-# State covariances: Time-varying functional connectivity
-state_FC = np.zeros(shape=(q, q, K))
-for k in range(K):
-    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k) # the state covariance matrices in the shape (no. features, no. features, no. states)
-    
 
 # Fractional occupancy (FO): the fraction of time in each session that is occupied by each state
 FO = utils.get_FO(Gamma, indices=indices)
@@ -169,60 +158,40 @@ SR = utils.get_switching_rate(Gamma, indices) # switching rate indicates how qui
 # Dwell times / State lifetimes
 LTmean, LTmed, LTmax = utils.get_life_times(vpath, indices)
 
+# Number of active states
+active_K = hmm.get_active_K()
+
+# Spectral content for each state
+
+# Retrieve the covariance matrices for all states; the function returns an array of shape (n_variables, n_variables, n_states)
+covmats = hmm.get_covariance_matrices(orig_space=True)
+
+# State covariances: Time-varying functional connectivity
+state_FC = np.zeros(shape=(q, q, K))
+for k in range(K):
+    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k) # the state covariance matrices in the shape (no. features, no. features, no. states)
 
 
-# ===========================
-# 5. SPECTRAL ESTIMATION PER STATE
-# ===========================
-# Here we perform a simple spectral estimation using Welch's method.
-# For each state, we extract the timepoints (from each subject) where that state is active and compute an average power spectrum.
-spectra = {}
-for state in range(K):
-    state_segments = []
-    
-    # Loop over subjects using the indices
-    for i in range(len(indices)):
-        start_idx, end_idx = indices[i]
-        # Extract subject-specific Viterbi path and data
-        subject_vpath = vpath[start_idx:end_idx]
-        subject_data = X_concat[start_idx:end_idx, :]
-        
-        # Find indices where the state is active
-        state_idx = np.where(subject_vpath == state)[0]
-        if state_idx.size > 0:
-            state_segments.append(subject_data[state_idx, :])
-    
-    if state_segments:
-        # Concatenate data from all segments in this state
-        state_data_all = np.concatenate(state_segments, axis=0)
-        # Compute power spectrum for each feature and average over features
-        psd_list = []
-        for feature in range(state_data_all.shape[1]):
-            f, psd = welch(state_data_all[:, feature], fs=fs, nperseg=5*fs)
-            psd_list.append(psd)
-        avg_psd = np.mean(psd_list, axis=0)
-        spectra[state] = {'freq': f, 'psd': avg_psd}
-    else:
-        spectra[state] = {'freq': None, 'psd': None}
+#### MODEL DIAGNOSTICS ####
 
-# Optionally, plot the average power spectrum for each state.
-plt.figure(figsize=(10, 6))
-for state in range(K):
-    if spectra[state]['freq'] is not None:
-        plt.plot(spectra[state]['freq'], spectra[state]['psd'], label=f'State {state+1}')
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Power Spectral Density')
-plt.title('Average Power Spectrum per State')
-plt.legend()
-plt.tight_layout()
-plt.show()
+# Initial probabilities
+IP = hmm.get_Pi()
+
+# Explained variance per session (how much of the variance in data Y is explained by the model)
+r2 = hmm.get_r2(X=None, Y=data_tde, Gamma)  # returns R-squared (proportion of the variance explained) for each session and each variable in Y.
+
+# The likelihood of the model per state and time point 
+llh = hmm.loglikelihood(=None, Y=data_tde)
+
+
+print("\n------------- Output extraction finished -------------\n")
 
 # ===========================
-# 6. SAVE RESULTS
+# 5. SAVE RESULTS
 # ===========================
 # Save the HMM object and the key outputs to an npz file.
-save_path = f'/m/nbe/scratch/controlmeg/sara_tuo/processed/group/sensors_concat_group{job_id}.npz'
-np.savez(save_path,
+npz_file_path = fname.tde_hmm_ob(job_id=job_id)
+np.savez(npz_file_path,
          model=hmm,
          state_means=state_means,
          transition_probabilities=TP,
@@ -230,7 +199,7 @@ np.savez(save_path,
          indices=indices,
          spectra=spectra)
 
-print("Results saved to", save_path)
+print("\n >>> Results saved to ", npz_file_path)
 
 
 """

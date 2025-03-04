@@ -1,7 +1,6 @@
-import os
 import numpy as np
 import matplotlib.pyplot as plt
-from glhmm import glhmm, preproc, utils, graphics
+from glhmm import utils, graphics
 
 # ---------------------------
 # VISUALISATION FUNCTIONS
