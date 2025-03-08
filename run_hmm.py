@@ -4,7 +4,7 @@ from scipy.signal import welch
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sb
-from glhmm import glhmm, preproc, utils, graphics
+from glhmm import glhmm, preproc, utils, graphics, auxiliary
 from config import fname
 from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag)
 from hmm_visuals import (
@@ -79,13 +79,14 @@ print("Indices shape:", indices_new.shape)
 # Time-delay embedding
 
 # Define the number of lags (= window size)
-lag_val =list(range(-7, 8, 1))
+embeddedlags =list(range(-7, 8, 1))
+print(embeddedlags)
 
 # Build the time-delay embedded data
 data_tde, indices_tde = preproc.build_data_tde(
     data_processed,
     indices_new,
-    lag_val
+    embeddedlags
 )
 
 # Convert indices to integer type
@@ -133,15 +134,21 @@ print("\n------------- TDE-HMM model trained-------------\n")
 # 4. OUTPUT EXTRACTION & VISUALISATION
 # ===========================
 
-# Gamma extraction?
-
+print("\n------------- Output extraction begins -------------\n")
 
 # Viterbi path (discrete state sequence)
 vpath = hmm.decode(X=None, Y=data_tde, indices=indices_tde, viterbi=True)
 
+# Gamma reconstruction?
+T = auxiliary.get_T(indices)
+options ={'embeddedlags': embeddedlags}
+Gamma = auxiliary.padGamma(Gamma_tde,
+                          T,
+                          options=options)
 
-"""# Retrieve state means using get_means() (shape: [n_features, K])
-q = X_concat.shape[1] # the number of parcels/channels
+
+# Retrieve state means using get_means() (shape: [n_features, K])
+q = data_tde.shape[1] # the number of parcels/channels
 K = hmm.hyperparameters["K"] # the number of states
 state_means = np.zeros(shape=(q, K))
 state_means = hmm.get_means()
@@ -161,7 +168,7 @@ LTmean, LTmed, LTmax = utils.get_life_times(vpath, indices)
 # Number of active states
 active_K = hmm.get_active_K()
 
-# Spectral content for each state
+# TO DO: Spectral content for each state
 
 # Retrieve the covariance matrices for all states; the function returns an array of shape (n_variables, n_variables, n_states)
 covmats = hmm.get_covariance_matrices(orig_space=True)
@@ -178,10 +185,10 @@ for k in range(K):
 IP = hmm.get_Pi()
 
 # Explained variance per session (how much of the variance in data Y is explained by the model)
-r2 = hmm.get_r2(X=None, Y=data_tde, Gamma)  # returns R-squared (proportion of the variance explained) for each session and each variable in Y.
+r2 = hmm.get_r2(X=None, Y=data_tde, Gamma=Gamma)  # returns R-squared (proportion of the variance explained) for each session and each variable in Y.
 
 # The likelihood of the model per state and time point 
-llh = hmm.loglikelihood(=None, Y=data_tde)
+llh = hmm.loglikelihood(X=None, Y=data_tde)
 
 
 print("\n------------- Output extraction finished -------------\n")
@@ -196,10 +203,9 @@ np.savez(npz_file_path,
          state_means=state_means,
          transition_probabilities=TP,
          viterbi_path=vpath,
-         indices=indices,
-         spectra=spectra)
+         switching_rate=SR,
+         initial_probabilities=IP,
+         explained_variance=r2,
+         indices=indices)
 
 print("\n >>> Results saved to ", npz_file_path)
-
-
-"""
