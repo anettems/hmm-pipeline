@@ -40,7 +40,9 @@ lfreq_ica = 1
 hfreq = 48
 sfreq = 200 # Sampling frequency
 n_labels = 450 # left: 226, right: 224, both: 450
-lag = 8
+lag = 3
+n_pca = 85
+K = 6  # number of HMM states
 job_id = "_job_source_2"
 pc_type = 'aparc_sub'
 
