@@ -69,7 +69,20 @@ print("Indices shape:", indices.shape)
 
 # Preprocess the data
 # The preprocess_data function expects (data, indices) and returns the (processed_data, _)
-data_processed, indices_new, log = preproc.preprocess_data(data, indices, standardise=True)
+data_processed, indices_new, log = preproc.preprocess_data(data, 
+                                                           indices, 
+                                                           fs=sfreq, 
+                                                           dampen_extreme_peaks=True, 
+                                                           standardise=True,
+                                                           filter=(lfreq, hfreq),
+                                                           detrend=True,
+                                                           onpower=False,
+                                                           onphase=False,
+                                                           pca=0.9,
+                                                           exact_pca=True,
+                                                           ica=None,
+                                                           post_standardise=True,
+                                                           downsample=100)
 print("\nData preprocessed.")
 print("Data shape:", data_processed.shape)
 print("Indices shape:", indices_new.shape)
@@ -78,7 +91,8 @@ print("Indices shape:", indices_new.shape)
 # Time-delay embedding
 
 # Define the number of lags (= window size)
-embeddedlags = list(range(-lag, lag + 1, 1))
+#embeddedlags = list(range(-lag, lag + 1, 1))
+embeddedlags = np.arange(lag)
 print("\nLags for TDE-HMM: ", embeddedlags)
 
 # Define the number of PCA components
@@ -90,14 +104,12 @@ data_tde, indices_tde, pcamodel = preproc.build_data_tde(
     data_processed,
     indices_new,
     embeddedlags,
-    pca=n_pca
+    pca=n_pca,
+    standardise_pc=True
 )
 
 log["pca"] = n_pca # store number of pca components in logs
 log["pcamodel"] = pcamodel # store pcamodel in logs
-
-n_lags = len(embeddedlags)
-log["p"] = n_labels * n_lags # p should be the original (pre-PCA) dimensionality
 
 # Convert indices to integer type
 indices_tde = indices_tde.astype(int)
