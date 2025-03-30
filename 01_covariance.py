@@ -5,13 +5,16 @@ import pandas as pd
 import mne
 import os
 
+print("\n #### Starting noise covariance calculation. #### \n")
 
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
 for i, row in df_subjects.iterrows():
     subject = row["subject"]
-    for ses in sessions:                
+    print('Processing subject: ', subject)
+    for ses in sessions:         
+        print('Processing session: ', ses)
         # Get emptyroom data for the noise covariance
         emptyroom_fname = fname.emptyroom_sci(subject=subject,ses=ses)
 
@@ -20,7 +23,7 @@ for i, row in df_subjects.iterrows():
             
             # Calculate noise covariance on baseline time period
             # Check rank estimation!!!!
-            noise_cov = mne.compute_raw_covariance(raw,rank="auto",picks='meg')#, method='auto') 
+            noise_cov = mne.compute_raw_covariance(raw,rank="auto",picks='meg')
             noise_cov.plot(raw.info)
             # Save noise covariance matrix
 
@@ -29,3 +32,5 @@ for i, row in df_subjects.iterrows():
                 os.makedirs(fname.hmm_bids_dir(subject=subject,ses=ses) + '/noise_cov/')
 
             mne.write_cov(fname.noise_cov(subject=subject, ses=ses, task=task, lfreq=lfreq, hfreq=hfreq), noise_cov, overwrite=True)
+
+print("\n #### Covariance calculations finalized. #### \n")

@@ -15,20 +15,19 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(parent_dir)
 
 from functions import reject_bad_segs
-from config import (fname, spacing)
-from settings_hmm_beta import (proc_scimeg, task, lfreq, lfreq_ica, hfreq, sessions)
+from config import fname
+from settings_hmm_beta import (proc_scimeg, task, lfreq, lfreq_ica, hfreq, sfreq, run, sessions, spacing)
 from mne.minimum_norm import make_inverse_operator, apply_inverse_raw
 
+print("\n #### Starting 03_inverse.py #### \n")
 
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
-run = "01"
-sfreq=200
-
 
 for i, row in df_subjects.iterrows():
     subject = row["subject"]
+    print('Processing subject: ', subject)
 
     for ses in sessions:
         print('Processing session: ', ses)
@@ -41,7 +40,7 @@ for i, row in df_subjects.iterrows():
         noise_cov = mne.read_cov(fname.noise_cov(subject=subject, ses=ses, task=task, lfreq=lfreq, hfreq=hfreq))
 
         # Read the info structure
-        mfilter_path = fname.raw(
+        mfilter_path = fname.raw_sci_mf(
             subject=subject,
             ses=ses,
             task=task,
@@ -69,7 +68,7 @@ for i, row in df_subjects.iterrows():
         raw.plot()
 
         # Compute inverse operator
-        pick_ori = None #'normal' # 'normal' or None
+        pick_ori = None # 'normal' or None
         snr = 1.0 
         lambda2 = 1.0 / snr ** 2
         method = "MNE"
@@ -81,7 +80,7 @@ for i, row in df_subjects.iterrows():
                                             fixed=True,
                                             loose = 0, 
                                             depth = 0.8,
-                                            rank = {'grad':64}) 
+                                            rank = {'grad':72}) 
         if not os.path.exists(fname.hmm_bids_dir(subject=subject, ses=ses) + '/inverse/'):
             os.makedirs(fname.hmm_bids_dir(subject=subject, ses=ses) + '/inverse/' )
         
@@ -96,7 +95,9 @@ for i, row in df_subjects.iterrows():
         if not os.path.exists(fname.hmm_bids_dir(subject=subject, ses=ses) + '/stcs/'):
                 os.makedirs(fname.hmm_bids_dir(subject=subject, ses=ses) + '/stcs/')
 
-        stc = apply_inverse_raw(raw, inverse_operator, lambda2, method, pick_ori=pick_ori)#, label=label_pc_1[0] ) # option of putting tmin and tmanx
+        stc = apply_inverse_raw(raw, inverse_operator, lambda2, method, pick_ori=pick_ori)
         
         #stc.save(fname.stc_average_nht(subject=subject, ses = ses, task=task), overwrite=True)
         stc.save(fname.stc(subject=subject, ses = ses, task=task, lfreq=lfreq, hfreq=hfreq), overwrite=True)
+        
+print("\n #### Finalized 03_inverse.py #### \n")

@@ -1,21 +1,16 @@
 import os
 import numpy as np
-from scipy.signal import welch
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sb
-from glhmm import glhmm, preproc, utils, graphics, auxiliary, io
+from glhmm import glhmm, preproc, utils
 from config import fname
-from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n_labels, n_pca)
-from hmm_visuals import (
-    plot_viterbi_path,
-    visualize_state_means)
+from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n_pca)
+from compute_psd import (compute_statewise_spectra_windowed)
 
 # ===========================
 # 1. PARAMETERS & PATHS
 # ===========================
 
-job_id = '_job_source_2'  # Change to avoid overwriting the files
+job_id = '_job_source_30v9_ALL_complete'  # Change to avoid overwriting the files
 
 
 # Read the subject txt file
@@ -63,6 +58,8 @@ print(f"\nLoaded and concatenated data from {df_subjects.shape[0]} subjects.")
 print("Data shape:", data.shape)
 print("Indices shape:", indices.shape)
 
+n_timepoints, n_subjects, n_channels = data.shape[0], indices.shape[0], data.shape[1]
+
 # ===========================
 # 3. DATA PREPROCESSING FOR TDE-HMM
 # ===========================
@@ -72,17 +69,17 @@ print("Indices shape:", indices.shape)
 data_processed, indices_new, log = preproc.preprocess_data(data, 
                                                            indices, 
                                                            fs=sfreq, 
-                                                           dampen_extreme_peaks=True, 
+                                                           dampen_extreme_peaks=None, 
                                                            standardise=True,
                                                            filter=(lfreq, hfreq),
-                                                           detrend=True,
+                                                           detrend=False,
                                                            onpower=False,
                                                            onphase=False,
-                                                           pca=0.9,
-                                                           exact_pca=True,
+                                                           #pca=n_pca,
+                                                           #exact_pca=True,
                                                            ica=None,
-                                                           post_standardise=True,
-                                                           downsample=100)
+                                                           #post_standardise=True,
+                                                           downsample=None)
 print("\nData preprocessed.")
 print("Data shape:", data_processed.shape)
 print("Indices shape:", indices_new.shape)
@@ -91,8 +88,8 @@ print("Indices shape:", indices_new.shape)
 # Time-delay embedding
 
 # Define the number of lags (= window size)
-#embeddedlags = list(range(-lag, lag + 1, 1))
-embeddedlags = np.arange(lag)
+embeddedlags = list(range(-lag, lag + 1, 1))
+
 print("\nLags for TDE-HMM: ", embeddedlags)
 
 # Define the number of PCA components
@@ -108,11 +105,13 @@ data_tde, indices_tde, pcamodel = preproc.build_data_tde(
     standardise_pc=True
 )
 
+# Adding this information in the preproclog to avoid errors
 log["pca"] = n_pca # store number of pca components in logs
 log["pcamodel"] = pcamodel # store pcamodel in logs
+log["icamodel"] = None
 
 # Convert indices to integer type
-indices_tde = indices_tde.astype(int)
+#indices_tde = indices_tde.astype(int)
 
 print("\nData built for the time-delay embedded HMM model.")
 print("Concatenated & preprocessed TDE data shape:", data_tde.shape)
@@ -146,21 +145,33 @@ print("\n------------- TDE-HMM model training begins -------------\n")
 # Set a seed for reproducibility
 np.random.seed(123)
 
+
+options = {
+    "gpu_acceleration": 1,  # Enable GPU when >= 1
+    "gpuChunks": 1,         # Split data if needed for large datasets         
+    "tol": 1e-5
+}
+
+
+"""
+
 options = {
     "gpu_acceleration": 1,  # Enable GPU when >= 1
     "gpuChunks": 1,         # Split data if needed for large datasets
     "initrep": 1,           # To make the training quicker - leave by default if not just testing
     "initcyc": 1,           # To make the training quicker - leave by default if not just testing
-    "cyc": 1                # To make the training quicker - leave by default if not just testing
+    "cyc": 1,                # To make the training quicker - leave by default if not just testing
+    "tol": 1e-5
 }
+"""
 
 Gamma_tde, Xi, FE = hmm.train(X=None, Y=data_tde, indices=indices_tde, options=options)
 
 print("\n------------- TDE-HMM model trained-------------\n")
 
-
+# Saving the trained HMM model with GLHMM saving function
 hmm_path = fname.tde_hmm_path
-filename = "latest-tde-hmm-pca-09.pkl"
+filename = "latest-tde-hmm-group-pca-45-complete.pkl"
 glhmm.io.save_hmm(hmm, filename, directory=hmm_path)
 
 
@@ -171,23 +182,23 @@ glhmm.io.save_hmm(hmm, filename, directory=hmm_path)
 
 print("\n------------- Output extraction begins -------------\n")
 
-print(f"Data dimension of Gamma-TDE: {Gamma_tde.shape}")
-
 # Viterbi path (discrete state sequence)
 vpath = hmm.decode(X=None, Y=data_tde, indices=indices_tde, viterbi=True)
-plot_viterbi_path(vpath)
-
-# Gamma reconstruction?
-"""T = auxiliary.get_T(indices)
-options ={'embeddedlags': embeddedlags}
-Gamma = auxiliary.padGamma(Gamma_tde,
-                          T,
-                          options=options)"""
-Gamma=Gamma_tde
 
 # Retrieve the transition probability matrix
 TP = hmm.P.copy()
 
+Gamma = Gamma_tde
+
+# === Check if Gamma sums to 1 at each time point ===
+gamma_sums = Gamma.sum(axis=1)
+bad_indices = np.where(np.abs(gamma_sums - 1) > 1e-5)[0]
+
+if len(bad_indices) > 0:
+    print(f"Warning: {len(bad_indices)} timepoints where Gamma does not sum to 1.")
+    print("Example of problematic Gamma sums:", gamma_sums[bad_indices[:5]])
+else:
+    print("Gamma is well-behaved: all timepoints sum to 1.")
 
 # Fractional occupancy (FO): the fraction of time in each session that is occupied by each state
 FO = utils.get_FO(Gamma, indices=indices_tde)
@@ -201,30 +212,34 @@ LTmean, LTmed, LTmax = utils.get_life_times(vpath, indices_tde)
 # Number of active states
 active_K = hmm.get_active_K()
 
-# TO DO: Spectral content for each state
-
-# Retrieve state means using get_means() (shape: [n_features, K])
+# State covariances: Time-varying functional connectivity
 q = data_tde.shape[1] # the number of parcels/channels
 K = hmm.hyperparameters["K"] # the number of states
 
-# Retrieve the covariance matrices for all states; the function returns an array of shape (n_variables, n_variables, n_states)
-covmats = hmm.get_covariance_matrices(orig_space=True)
-
-
-# State covariances: Time-varying functional connectivity
 state_FC = np.zeros(shape=(q, q, K))
-for k in range(K):
-    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k) # the state covariance matrices in the shape (no. features, no. features, no. states)
 
+for k in range(K):
+    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k, orig_space=False) # the state covariance matrices in the shape (no. features, no. features, no. states)
+
+
+# Spectra
+spectra, freqs = compute_statewise_spectra_windowed(
+    data_processed,
+    Gamma,
+    sfreq=sfreq,
+    lag=lag,
+    fmin=1,
+    fmax=hfreq,
+    bandwidth=4.0,
+    win_length_sec=5,
+    step_sec=2.5  # 50% overlap
+)
 
 
 #### MODEL DIAGNOSTICS ####
 
 # Initial probabilities
 IP = hmm.get_Pi()
-
-# Explained variance per session (how much of the variance in data Y is explained by the model)
-r2 = hmm.get_r2(X=None, Y=data_tde, Gamma=Gamma)  # returns R-squared (proportion of the variance explained) for each session and each variable in Y.
 
 # The likelihood of the model per state and time point 
 llh = hmm.loglikelihood(X=None, Y=data_tde)
@@ -246,9 +261,11 @@ np.savez(npz_file_path,
          switching_rate=SR,
          fractional_occupancy=FO,
          dwell_time_mean=LTmean,
+         spectra=spectra,
+         spectra_freqs=freqs,
          initial_probabilities=IP,
-         explained_variance=r2,
          likelihood=llh,
-         indices=indices_tde)
+         indices=indices_tde,
+         q=q)
 
 print("\n >>> Results saved to ", npz_file_path)

@@ -2,20 +2,22 @@ import mne
 import pandas as pd
 import os
 
-from settings_hmm_beta import (task, lfreq, hfreq, sessions, pc_type)
-from config import (fname, subjects_dir, spacing)
+from settings_hmm_beta import (task, lfreq, hfreq, sessions, pc_type, spacing)
+from config import (fname, subjects_dir)
 import numpy as np
 
+print("\n #### Starting 04_extract_npyfile.py #### \n")
 
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
+template_subject = 'fsaverage_sara' 
 
 # Get labels for FreeSurfer 'aparc_sub' cortical parcellation
-labels_parc = mne.read_labels_from_annot(subject = 'fsaverage_sara', parc = pc_type, subjects_dir=subjects_dir)
+labels_parc = mne.read_labels_from_annot(subject = template_subject, parc = pc_type, subjects_dir=subjects_dir)
 
 # Get source space from the file corresponding to the template subject
-fname_src = fname.src(hmm_bids_dir=fname.hmm_bids_dir(subject='fsaverage_sara', ses='01'), subject='fsaverage_sara', spacing=spacing)
+fname_src = fname.src(hmm_bids_dir=fname.hmm_bids_dir(subject=template_subject, ses='01'), subject=template_subject, spacing=spacing)
 src = mne.read_source_spaces(fname_src)
 
 
@@ -55,4 +57,4 @@ for i, row in df_subjects.iterrows():
         np.save(npy_file_path, label_ts_fsaverage.T)
         print("Npy file saved")
         
-     
+print("\n #### Finalized 04_extract_npyfile.py #### \n")

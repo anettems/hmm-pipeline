@@ -16,6 +16,7 @@ import pandas as pd
 from config import fname
 from settings_hmm_beta import (proc_scimeg, task, sessions, lfreq, hfreq)
 
+print("\n #### Starting annotations. #### \n")
 
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
@@ -24,16 +25,17 @@ df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 # Loop for processing all subjects and all sessions
 for i, row in df_subjects.iterrows():
     subject = row["subject"]
+    print('Processing subject: ', subject)
 
     for ses in sessions:
         print('Processing session: ', ses)
 
         # Read the info structure
-        mfilter_path = fname.raw(
+        mfilter_path = fname.raw_sci_mf(
             subject=subject,
             ses=ses,
             task=task,
-            proc=proc_scimeg,
+            proc=proc_scimeg
             )
         
         
@@ -49,6 +51,10 @@ for i, row in df_subjects.iterrows():
             os.makedirs(fname.hmm_bids_dir(subject=subject, ses=ses) + '/annot/' )
             
         # Saving annotations in .fif files
-        interactive_annot.save( fname.annot(subject=subject,ses=ses,task = task,lfreq = lfreq, hfreq = hfreq), overwrite=True )
+        interactive_annot.save(fname.annot(subject=subject,
+                                           ses=ses,task=task,
+                                           lfreq = lfreq, 
+                                           hfreq = hfreq), overwrite=True )
 
 
+print("\n #### Annotations finalized. #### \n")

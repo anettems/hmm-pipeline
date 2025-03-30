@@ -1,40 +1,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from glhmm import utils, graphics
+from config import fname
+import pandas as pd
 
 # ---------------------------
 # VISUALISATION FUNCTIONS
 # ---------------------------
 
 
-def plot_viterbi_path(vpath):
+def plot_viterbi_path(vpath, indices):
     """
-    Plot the Viterbi path for the concatenated subjects using the glhmm graphics module.
+    Plot the Viterbi path for each subject separately.
     
     Parameters:
         vpath: the decoded state sequence.
+        indices: (n_subjects, 2) array of start and end timepoints per subject.
     """
-    graphics.plot_vpath(vpath, title="Viterbi Path (Concatenated Subjects)")
+    df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
-def visualize_state_means(hmm):
-    """
-    Retrieve state means from the HMM and visualise them as a heatmap.
-    
-    Parameters:
-        hmm: the trained HMM object.
-    """
-    state_means = hmm.get_means()  # shape: [n_features, K]
-    K = hmm.hyperparameters["K"]
-    
-    plt.figure(figsize=(6, 4))
-    plt.imshow(state_means, cmap="coolwarm", interpolation="none")
-    plt.colorbar(label="Activation Level")
-    plt.title("State Mean Activation")
-    plt.xlabel("State")
-    plt.ylabel("Brain region")
-    plt.xticks(np.arange(K), np.arange(1, K + 1))
-    plt.tight_layout()
-    plt.show()
+    for i, row in df_subjects.iterrows():
+        subject = row["subject"]
+        start, end = indices[i]
+        vpath_sub = vpath[start:end]
+ 
+        graphics.plot_vpath(
+            vpath_sub,
+            title=f"Viterbi Path - {subject}",
+            figsize=(7, 2.5),
+            show_legend=True,
+            xlabel='Timepoints',
+            ylabel='',
+        )
+        plt.tight_layout()
+        plt.show()
+
 
 def plot_transition_probabilities(hmm):
     """
@@ -82,11 +82,11 @@ def plot_state_covariances(hmm, q):
     state_FC = np.zeros((q, q, K))
     
     for k in range(K):
-        state_FC[:, :, k] = hmm.get_covariance_matrix(k=k)
+        state_FC[:, :, k] = hmm.get_covariance_matrix(k=k, orig_space=False)
     
     plt.figure(figsize=(10, 8))
     for k in range(K):
-        plt.subplot(2, 2, k + 1)
+        plt.subplot(3, 2, k + 1)
         plt.imshow(state_FC[:, :, k], cmap=cmap)
         plt.xlabel("Brain region")
         plt.ylabel("Brain region")
@@ -94,6 +94,8 @@ def plot_state_covariances(hmm, q):
         plt.title("State covariance\nstate #%s" % (k + 1))
     plt.subplots_adjust(hspace=0.7, wspace=0.8)
     plt.show()
+    
+
 
 def plot_fractional_occupancy(Gamma, indices):
     """
@@ -105,7 +107,22 @@ def plot_fractional_occupancy(Gamma, indices):
         indices: 2D array specifying [start, end] indices for each subject/session.
     """
     FO = utils.get_FO(Gamma, indices=indices)
-    graphics.plot_FO(FO, num_ticks=FO.shape[0])
+    
+    graphics.plot_FO(
+        FO,
+        figsize=(8, 4),
+        fontsize_ticks=12,
+        fontsize_labels=14,
+        fontsize_title=16,
+        width=0.8,
+        xlabel='Subject',
+        ylabel='Fractional occupancy',
+        title='State Fractional Occupancies',
+        show_legend=True,
+        num_x_ticks=11,
+        num_y_ticks=5,
+        pad_y_spine=None,
+        save_path=None)
 
 def plot_switching_rate(Gamma, indices):
     """
@@ -116,7 +133,21 @@ def plot_switching_rate(Gamma, indices):
         indices: 2D array specifying [start, end] indices for each subject/session.
     """
     SR = utils.get_switching_rate(Gamma, indices)
-    graphics.plot_switching_rates(SR, num_ticks=SR.shape[0])
+    graphics.plot_switching_rates(
+        SR,
+        figsize=(8, 4),
+        fontsize_ticks=12,
+        fontsize_labels=14,
+        fontsize_title=16,
+        width=0.18,
+        xlabel='Subject',
+        ylabel='Switching Rate',
+        title='State Switching Rates',
+        show_legend=True,
+        num_x_ticks=12,
+        num_y_ticks=3,
+        pad_y_spine=None,
+        save_path=None)
 
 def plot_state_lifetimes(vpath, indices):
     """
@@ -127,25 +158,44 @@ def plot_state_lifetimes(vpath, indices):
         indices: 2D array specifying [start, end] indices for each subject/session.
     """
     LTmean, LTmed, LTmax = utils.get_life_times(vpath, indices)
-    graphics.plot_state_lifetimes(LTmean, num_ticks=LTmean.shape[0], ylabel='Mean lifetime')
+    graphics.plot_state_lifetimes(
+        LTmean,  # Use LTmed or LTmax to plot those instead
+        figsize=(8, 4),
+        fontsize_ticks=12,
+        fontsize_labels=14,
+        fontsize_title=16,
+        width=0.18,
+        xlabel='Subject',
+        ylabel='Lifetime',
+        title='State Lifetimes (Mean)',
+        show_legend=True,
+        num_x_ticks=12,
+        num_y_ticks=2,
+        pad_y_spine=None,
+        save_path=None)
+    
+def plot_statewise_spectra(spectra, freqs):
+    plt.figure(figsize=(10, 6))
+    for k in range(spectra.shape[0]):
+        plt.plot(freqs, spectra[k], label=f"State {k+1}")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Power")
+    plt.title("State-wise Spectral Profiles (Gamma-weighted)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 
-# Optionally, you can add an example "main" block to test individual functions:
-if __name__ == "__main__":
-    # Note: This block is only for testing purposes and will only run
-    # when this script is executed directly, not when imported.
-    # You need to have a trained HMM model and data loaded to use these functions.
-    
-    # Example (pseudocode):
-    # from your_data_loading_module import X_concat, indices, Gamma, hmm
-    # vpath = get_viterbi_path(hmm, X_concat, indices)
-    # plot_viterbi_path(vpath)
-    # visualize_state_means(hmm)
-    # plot_transition_probabilities(hmm)
-    # q = X_concat.shape[1]
-    # plot_state_covariances(hmm, q)
-    # plot_fractional_occupancy(Gamma, indices)
-    # plot_switching_rate(Gamma, indices)
-    # plot_state_lifetimes(vpath, indices)
-    
-    pass
+def plot_spectra_heatmap(spectra, freqs):
+    plt.figure(figsize=(10, 5))
+    plt.imshow(spectra, aspect='auto', origin='lower',
+               extent=[freqs[0], freqs[-1], 1, spectra.shape[0]],
+               cmap='viridis')
+    plt.colorbar(label='Power')
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("State")
+    plt.title("Spectral Power per State")
+    plt.tight_layout()
+    plt.show()
+

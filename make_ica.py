@@ -7,6 +7,8 @@ from settings_hmm_beta import (proc_scimeg, task, sessions, lfreq_ica, hfreq, ic
 
 lfreq = lfreq_ica
 
+print("\n #### Starting ICA. #### \n")
+
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
 
@@ -26,9 +28,9 @@ for i_ses, session in enumerate(sessions):
     print("SESSION: ", session)
     for i_sub, row in df_subjects.iterrows():
         subject = row["subject"]
-        print(subject)
+        print('Processing subject: ', subject)
         
-        mfilter_path = fname.raw(
+        mfilter_path = fname.raw_sci_mf(
             subject=subject,
             ses=session,
             task=task,
@@ -36,7 +38,7 @@ for i_ses, session in enumerate(sessions):
         )
         print(mfilter_path)
 
-        if os.path.exists(mfilter_path):  # and not os.path.exists(op_path):
+        if os.path.exists(mfilter_path):
 
             print(subject)
 
@@ -52,5 +54,12 @@ for i_ses, session in enumerate(sessions):
             if not os.path.exists(fname.hmm_bids_dir(subject=subject, ses=session) + '/ica/'):
                 os.makedirs(fname.hmm_bids_dir(subject=subject, ses=session) + '/ica/' )
             
-            ica.save( fname.ica(subject=subject,ses=session,task = task,lfreq = lfreq, hfreq = hfreq), overwrite = True )
+            ica.save(fname.ica(subject=subject,
+                                ses=session,
+                                task = task,
+                                lfreq = lfreq, 
+                                hfreq = hfreq), overwrite = True)
             print("ICA saved")
+            
+            
+print("\n #### ICA finalized. #### \n")
