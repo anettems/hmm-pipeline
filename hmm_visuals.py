@@ -174,28 +174,18 @@ def plot_state_lifetimes(vpath, indices):
         pad_y_spine=None,
         save_path=None)
     
-def plot_statewise_spectra(spectra, freqs):
-    plt.figure(figsize=(10, 6))
-    for k in range(spectra.shape[0]):
-        plt.plot(freqs, spectra[k], label=f"State {k+1}")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Power")
-    plt.title("State-wise Spectral Profiles (Gamma-weighted)")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_spectra_heatmap(spectra, freqs):
-    plt.figure(figsize=(10, 5))
-    plt.imshow(spectra, aspect='auto', origin='lower',
-               extent=[freqs[0], freqs[-1], 1, spectra.shape[0]],
-               cmap='viridis')
-    plt.colorbar(label='Power')
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("State")
-    plt.title("Spectral Power per State")
-    plt.tight_layout()
-    plt.show()
+def plot_statewise_spectra(spectra_fit, K):
+    f = spectra_fit["f"]
+    p = spectra_fit["p"]  # shape: (n_subjects, n_freq, n_channels, n_states)
+    
+    mean_p = p.mean(axis=0)  # average across subjects → (n_freq, n_channels, n_states)
+    
+    for k in range(K):
+        plt.figure()
+        plt.plot(f, mean_p[:, :, k])
+        plt.title(f"State {k+1} - Power spectra (all parcels)")
+        plt.xlabel("Frequency (Hz)")
+        plt.ylabel("Power")
+        plt.grid(True)
+        plt.show()
 

@@ -1,16 +1,15 @@
 import os
 import numpy as np
 import pandas as pd
-from glhmm import glhmm, preproc, utils
+from glhmm import glhmm, preproc, utils, spectral
 from config import fname
 from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n_pca)
-from compute_psd import (compute_statewise_spectra_windowed)
 
 # ===========================
 # 1. PARAMETERS & PATHS
 # ===========================
 
-job_id = '_job_source_30v9_ALL_complete'  # Change to avoid overwriting the files
+job_id = '_job_source_1304v2-testing-cov'  # Change to avoid overwriting the files
 
 
 # Read the subject txt file
@@ -64,6 +63,10 @@ n_timepoints, n_subjects, n_channels = data.shape[0], indices.shape[0], data.sha
 # 3. DATA PREPROCESSING FOR TDE-HMM
 # ===========================
 
+
+# 3 min dataa?
+
+
 # Preprocess the data
 # The preprocess_data function expects (data, indices) and returns the (processed_data, _)
 data_processed, indices_new, log = preproc.preprocess_data(data, 
@@ -75,11 +78,12 @@ data_processed, indices_new, log = preproc.preprocess_data(data,
                                                            detrend=False,
                                                            onpower=False,
                                                            onphase=False,
-                                                           #pca=n_pca,
-                                                           #exact_pca=True,
+                                                           pca=n_pca,
+                                                           exact_pca=True,
                                                            ica=None,
-                                                           #post_standardise=True,
-                                                           downsample=None)
+                                                           post_standardise=True,
+                                                           #downsample=100
+                                                           )
 print("\nData preprocessed.")
 print("Data shape:", data_processed.shape)
 print("Indices shape:", indices_new.shape)
@@ -94,20 +98,30 @@ print("\nLags for TDE-HMM: ", embeddedlags)
 
 # Define the number of PCA components
 #noPca = n_labels*2      # 2 x the number of regions (logic explained in Vidaurre et al. 2018)
-print("PCA components for TDE-HMM: ", n_pca)
+print("PCA components for TDE-HMM: ", n_pca) # n_pca=0.9
 
 # Build the time-delay embedded data
+
+data_tde, indices_tde = preproc.build_data_tde(
+    data_processed,
+    indices_new,
+    embeddedlags,
+    #pca=n_pca,
+    #standardise_pc=True
+)
+
+"""
 data_tde, indices_tde, pcamodel = preproc.build_data_tde(
     data_processed,
     indices_new,
     embeddedlags,
-    pca=n_pca,
-    standardise_pc=True
-)
+    #pca=n_pca,
+    #standardise_pc=True
+)"""
 
 # Adding this information in the preproclog to avoid errors
-log["pca"] = n_pca # store number of pca components in logs
-log["pcamodel"] = pcamodel # store pcamodel in logs
+#log["pca"] = n_pca # store number of pca components in logs
+#log["pcamodel"] = pcamodel # store pcamodel in logs
 log["icamodel"] = None
 
 # Convert indices to integer type
@@ -127,9 +141,10 @@ print("\n------------- Initializing HMM -------------\n")
 hmm = glhmm.glhmm(
     K=K,
     covtype='full',
-    model_beta='no',
-    preproclog=log
+    model_beta='no'
 )
+
+hmm.preproclog = log
 
 print("\nLogs of HMM model:")
 print(hmm.preproclog)
@@ -141,11 +156,13 @@ print(hmm.hyperparameters)
 
 # Train the HMM.
 
+# dual estimation glhmm paperista
+
 print("\n------------- TDE-HMM model training begins -------------\n")
 # Set a seed for reproducibility
 np.random.seed(123)
 
-
+"""
 options = {
     "gpu_acceleration": 1,  # Enable GPU when >= 1
     "gpuChunks": 1,         # Split data if needed for large datasets         
@@ -160,10 +177,9 @@ options = {
     "gpuChunks": 1,         # Split data if needed for large datasets
     "initrep": 1,           # To make the training quicker - leave by default if not just testing
     "initcyc": 1,           # To make the training quicker - leave by default if not just testing
-    "cyc": 1,                # To make the training quicker - leave by default if not just testing
-    "tol": 1e-5
+    "cyc": 1                # To make the training quicker - leave by default if not just testing
 }
-"""
+
 
 Gamma_tde, Xi, FE = hmm.train(X=None, Y=data_tde, indices=indices_tde, options=options)
 
@@ -171,7 +187,7 @@ print("\n------------- TDE-HMM model trained-------------\n")
 
 # Saving the trained HMM model with GLHMM saving function
 hmm_path = fname.tde_hmm_path
-filename = "latest-tde-hmm-group-pca-45-complete.pkl"
+filename = "latest-tde-hmm-group-pca-09-lags15-complete.pkl"
 glhmm.io.save_hmm(hmm, filename, directory=hmm_path)
 
 
@@ -189,16 +205,7 @@ vpath = hmm.decode(X=None, Y=data_tde, indices=indices_tde, viterbi=True)
 TP = hmm.P.copy()
 
 Gamma = Gamma_tde
-
-# === Check if Gamma sums to 1 at each time point ===
-gamma_sums = Gamma.sum(axis=1)
-bad_indices = np.where(np.abs(gamma_sums - 1) > 1e-5)[0]
-
-if len(bad_indices) > 0:
-    print(f"Warning: {len(bad_indices)} timepoints where Gamma does not sum to 1.")
-    print("Example of problematic Gamma sums:", gamma_sums[bad_indices[:5]])
-else:
-    print("Gamma is well-behaved: all timepoints sum to 1.")
+print("Gamma shape: ", Gamma.shape)
 
 # Fractional occupancy (FO): the fraction of time in each session that is occupied by each state
 FO = utils.get_FO(Gamma, indices=indices_tde)
@@ -216,25 +223,41 @@ active_K = hmm.get_active_K()
 q = data_tde.shape[1] # the number of parcels/channels
 K = hmm.hyperparameters["K"] # the number of states
 
+means = []
+print("Starting means computing")
+means = hmm.get_means(orig_space=True)
+print("State means computed")
+
 state_FC = np.zeros(shape=(q, q, K))
 
+print("Starting covariance computing")
+
 for k in range(K):
-    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k, orig_space=False) # the state covariance matrices in the shape (no. features, no. features, no. states)
+    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k, orig_space=True) # the state covariance matrices in the shape (no. features, no. features, no. states)
 
 
+print("Covariances computed in original space")
 # Spectra
-spectra, freqs = compute_statewise_spectra_windowed(
-    data_processed,
-    Gamma,
-    sfreq=sfreq,
-    lag=lag,
-    fmin=1,
-    fmax=hfreq,
-    bandwidth=4.0,
-    win_length_sec=5,
-    step_sec=2.5  # 50% overlap
-)
 
+fpass = [lfreq, hfreq] # Frequency range for spectral estimation
+win = 5*sfreq # 10000 -> 10000/200Hz = 50s
+tapers_res = 3 # time-half bandwidth product, e.g., 3 (controls taper smoothing).
+n_tapers = 5 # Number of DPSS tapers to use (default: 5).
+
+options_spectra = {
+    "standardize": True,
+    "fpass": fpass,
+    "win_len": win,
+    "tapers_res": tapers_res,
+    "n_tapers": n_tapers,
+    "embeddedlags": embeddedlags
+}
+
+print("Starting spectral analysis")
+
+spectra_fit = spectral.multitaper_spectral_analysis(data=data, indices=indices, Fs=sfreq, Gamma=Gamma, options=options_spectra)
+
+print("Finished spectral analysis")
 
 #### MODEL DIAGNOSTICS ####
 
@@ -255,14 +278,15 @@ npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 np.savez(npz_file_path,
          model=hmm,
          active_states=active_K,
+         gamma=Gamma,
+         spectra=spectra_fit,
+         means=means,
+         covariances=state_FC,
          transition_probabilities=TP,
          viterbi_path=vpath,
-         gamma=Gamma,
          switching_rate=SR,
          fractional_occupancy=FO,
          dwell_time_mean=LTmean,
-         spectra=spectra,
-         spectra_freqs=freqs,
          initial_probabilities=IP,
          likelihood=llh,
          indices=indices_tde,
