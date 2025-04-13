@@ -9,7 +9,7 @@ from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n
 # 1. PARAMETERS & PATHS
 # ===========================
 
-job_id = '_job_source_1304v2-testing-cov'  # Change to avoid overwriting the files
+job_id = '_job_source_1304v3-testing-spectra-min'  # Change to avoid overwriting the files
 
 
 # Read the subject txt file
@@ -257,6 +257,11 @@ print("Starting spectral analysis")
 
 spectra_fit = spectral.multitaper_spectral_analysis(data=data, indices=indices, Fs=sfreq, Gamma=Gamma, options=options_spectra)
 
+spectra_min = {
+    'f': spectra_fit['f'],
+    'p': spectra_fit['p']
+}
+
 print("Finished spectral analysis")
 
 #### MODEL DIAGNOSTICS ####
@@ -279,7 +284,8 @@ np.savez(npz_file_path,
          model=hmm,
          active_states=active_K,
          gamma=Gamma,
-         spectra=spectra_fit,
+         spectra_min=spectra_min,
+         #spectra_full=spectra_fit, # Save this only if psdc or coh is needed for analysis
          means=means,
          covariances=state_FC,
          transition_probabilities=TP,

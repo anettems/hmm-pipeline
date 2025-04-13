@@ -69,7 +69,7 @@ def plot_transition_probabilities(hmm):
     plt.tight_layout()
     plt.show()
 
-def plot_state_covariances(hmm, q):
+def plot_state_covariances(state_FC, K):
     """
     Retrieve and plot the state covariance matrices (time-varying functional connectivity).
     
@@ -78,11 +78,6 @@ def plot_state_covariances(hmm, q):
         q: number of features (e.g., parcels/channels) in the data.
     """
     cmap = "coolwarm"
-    K = hmm.hyperparameters["K"]
-    state_FC = np.zeros((q, q, K))
-    
-    for k in range(K):
-        state_FC[:, :, k] = hmm.get_covariance_matrix(k=k, orig_space=False)
     
     plt.figure(figsize=(10, 8))
     for k in range(K):
@@ -97,16 +92,11 @@ def plot_state_covariances(hmm, q):
     
 
 
-def plot_fractional_occupancy(Gamma, indices):
+def plot_fractional_occupancy(FO):
     """
     Compute and plot the fractional occupancy (FO), i.e., the fraction of time in each session 
     occupied by each state.
-    
-    Parameters:
-        Gamma: state probability matrix from the HMM training.
-        indices: 2D array specifying [start, end] indices for each subject/session.
     """
-    FO = utils.get_FO(Gamma, indices=indices)
     
     graphics.plot_FO(
         FO,
@@ -124,15 +114,11 @@ def plot_fractional_occupancy(Gamma, indices):
         pad_y_spine=None,
         save_path=None)
 
-def plot_switching_rate(Gamma, indices):
+def plot_switching_rate(SR):
     """
-    Compute and plot the switching rate, which indicates how quickly subjects switch between states.
-    
-    Parameters:
-        Gamma: state probability matrix from the HMM training.
-        indices: 2D array specifying [start, end] indices for each subject/session.
+    Plot the switching rate, which indicates how quickly subjects switch between states.
+
     """
-    SR = utils.get_switching_rate(Gamma, indices)
     graphics.plot_switching_rates(
         SR,
         figsize=(8, 4),
@@ -149,15 +135,12 @@ def plot_switching_rate(Gamma, indices):
         pad_y_spine=None,
         save_path=None)
 
-def plot_state_lifetimes(vpath, indices):
+def plot_state_lifetimes(LTmean):
     """
-    Compute and plot the dwell times (state lifetimes) for each state.
-    
-    Parameters:
-        vpath: the decoded Viterbi state sequence.
-        indices: 2D array specifying [start, end] indices for each subject/session.
+    Plot the dwell times (state lifetimes) for each state.
+
     """
-    LTmean, LTmed, LTmax = utils.get_life_times(vpath, indices)
+
     graphics.plot_state_lifetimes(
         LTmean,  # Use LTmed or LTmax to plot those instead
         figsize=(8, 4),
@@ -174,11 +157,9 @@ def plot_state_lifetimes(vpath, indices):
         pad_y_spine=None,
         save_path=None)
     
-def plot_statewise_spectra(spectra_fit, K):
-    f = spectra_fit["f"]
-    p = spectra_fit["p"]  # shape: (n_subjects, n_freq, n_channels, n_states)
-    
-    mean_p = p.mean(axis=0)  # average across subjects → (n_freq, n_channels, n_states)
+def plot_statewise_spectra(f, p, K):
+
+    mean_p = p.mean(axis=0)  # average across subjects
     
     for k in range(K):
         plt.figure()

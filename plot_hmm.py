@@ -21,7 +21,8 @@ from glhmm import glhmm
 #job_id = '_job_source_31v1_ALL_complete-200hz'# PCA 45, no downsampling. TDE -7:7
 #job_id = '_job_source_0504v1' # PCA 0.9, no downsampling, TDE -15:15
 #job_id = '_job_source_0604v1-testing-pca'  
-job_id = '_job_source_1304v1-testing-spectra' # sub-16C only. Spectral analysis done.
+# job_id = '_job_source_1304v1-testing-spectra' # sub-16C only. Spectral analysis done.
+job_id = '_job_source_1304v2-testing-cov' # sub-16C only. spectral, means and cov orig space done.
 
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 
@@ -32,47 +33,45 @@ data = np.load(npz_file_path, allow_pickle=True)
 print(data.files)
 
 # Extract variables
-hmm = data['model'].item()          # Use .item() if it's a Python object
+
+spectra = data['spectra_min'].item()
+f = spectra['f']
+p = spectra['p']
+
+print("Spectra loaded")
+
+hmm = data['model'].item()
 indices = data['indices']
 q = data['q']
 vpath = data['viterbi_path']
 Gamma = data['gamma']
 indices = data['indices']
 fo = data['fractional_occupancy']
-spectra = data['spectra']
+means = data['means']
+covs = data['covariances']
+states = data['active_states']
+TP = data['transition_probabilities']
+FO = data['fractional_occupancy']
+SR = data['switching_rate']
+LTmean = data['dwell_time_mean']
 
-K = hmm.hyperparameters["K"] # the number of states
-
-print("K: ", K)
-print("q: ", q) # number of parcels
-
-K = hmm.hyperparameters["K"]
-
-means = []
-means = hmm.get_means(orig_space=True)
-print("State means computed")
-
-state_FC = np.zeros(shape=(q, q, K))
-
-for k in range(K):
-    state_FC[:,:,k] = hmm.get_covariance_matrix(k=k, orig_space=True) # the state covariance matrices in the shape (no. features, no. features, no. states)
-
-print("Covariances computed")
+print("Variables loaded")
 
 """
+
 plot_viterbi_path(vpath, indices)
 
 plot_transition_probabilities(hmm)
 
-#plot_state_covariances(hmm, q)
+plot_state_covariances(covs, states)
 
-plot_fractional_occupancy(Gamma, indices)
+plot_fractional_occupancy(FO)
 
-plot_switching_rate(Gamma, indices)
+plot_switching_rate(SR)
 
-plot_state_lifetimes(vpath, indices)
+plot_state_lifetimes(LTmean)
 
-plot_statewise_spectra(spectra, K)
+plot_statewise_spectra(f, p, states)
 
 
 print("\n### Plotting done for file: ", npz_file_path)
