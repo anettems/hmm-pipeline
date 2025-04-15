@@ -192,26 +192,17 @@ glhmm.io.save_hmm(hmm, filename, directory=hmm_path)
 
 print("\n------------- Dual estimation begins -------------\n")
 
-# Assumptions:
-    # data        = shape (T_total, n_parcels)
-    # indices     = shape (2, 2), one row per subject
-    # Gamma_tde   = shape (T_total, K)
+# Run dual estimation
+hmm_dual = hmm.dual_estimate(
+    X=None,
+    Y=data_tde,
+    indices=indices_tde,
+    Gamma=Gamma_tde
+)
 
-subject_hmms = []
-for i, (start, end) in enumerate(indices):
-    data_subject = data[start:end, :]
-    Gamma_subject = Gamma_tde[start:end, :]
-    subject_indices = np.array([[0, end - start]])
-
-    hmm_dual = hmm.dual_estimate(
-        X=None,
-        Y=data_subject,
-        indices=subject_indices,
-        Gamma=Gamma_subject
-    )
-    subject_hmms.append(hmm_dual)
 
 print("\n------------- Dual estimation finished -------------\n")
+
 
 # ===========================
 # 4. OUTPUT EXTRACTION & VISUALISATION
@@ -302,9 +293,10 @@ print("\n------------- Output extraction finished -------------\n")
 # ===========================
 # Save the HMM object and the key outputs to an npz file.
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
+
 np.savez(npz_file_path,
          model=hmm,
-         dual_estimates=subject_hmms,
+         dual_estimates=hmm_dual,
          active_states=active_K,
          gamma=Gamma,
          spectra_min=spectra_min,
@@ -321,4 +313,13 @@ np.savez(npz_file_path,
          indices=indices_tde,
          q=q)
 
-print("\n >>> Results saved to ", npz_file_path)
+print("\n >>> Group TDE-HMM results saved to ", npz_file_path)
+
+dual_file_path = fname.hmm_dual_ob(job_id=job_id)
+
+np.savez(dual_file_path,
+         dual_estimates=hmm_dual,
+         data=data_tde,
+         indices=indices_tde)
+
+print("\n >>> Dual estimate saved to ", dual_file_path)

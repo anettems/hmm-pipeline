@@ -161,7 +161,10 @@ fname.add(
 
 
 # TDE-HMM object and the key outputs 
-fname.add("tde_hmm_ob", "{processed_dir}/group/tde-hmm/sensors_concat_group{job_id}.npz")
+fname.add("tde_hmm_ob", "{processed_dir}/group/tde-hmm/parcels_concat_group_{job_id}.npz")
 
 # TDE-HMM object folder
 fname.add("tde_hmm_path", "{processed_dir}/group/tde-hmm/")
+
+# Dual estimate object and the key outputs 
+fname.add("hmm_dual_ob", "{processed_dir}/group/dual-estimate/parcels_concat_dual_{job_id}.npz")
