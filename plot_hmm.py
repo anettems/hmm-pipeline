@@ -5,10 +5,11 @@ from hmm_visuals import (
     plot_fractional_occupancy,
     plot_switching_rate,
     plot_state_lifetimes,
-    plot_statewise_spectra)
+    plot_statewise_spectra,
+    plot_statewise_average_spectra,
+    plot_state_means)
 from config import fname
 import numpy as np
-from glhmm import glhmm
 
 #job_id = '_job_source_29V4_ALL' # 0.9 PCA applied twice. Detrend=True, downsampling=100. All states active.
 # job_id = '_job_source_30v2_ALL' # 0.8 PCA (18 parcels). Only states 1, 3 and 6 active.
@@ -22,7 +23,8 @@ from glhmm import glhmm
 #job_id = '_job_source_0504v1' # PCA 0.9, no downsampling, TDE -15:15
 #job_id = '_job_source_0604v1-testing-pca'  
 # job_id = '_job_source_1304v1-testing-spectra' # sub-16C only. Spectral analysis done.
-job_id = '_job_source_1304v2-testing-cov' # sub-16C only. spectral, means and cov orig space done.
+#job_id = '_job_source_1304v2-testing-cov' # sub-16C only. spectral, means and cov orig space done.
+job_id = '_job_source_1304v3-testing-spectra-min' 
 
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 
@@ -54,16 +56,18 @@ TP = data['transition_probabilities']
 FO = data['fractional_occupancy']
 SR = data['switching_rate']
 LTmean = data['dwell_time_mean']
+K = hmm.hyperparameters["K"]
 
 print("Variables loaded")
 
-"""
 
 plot_viterbi_path(vpath, indices)
 
 plot_transition_probabilities(hmm)
 
-plot_state_covariances(covs, states)
+plot_state_covariances(covs, K)
+
+plot_state_means(means)
 
 plot_fractional_occupancy(FO)
 
@@ -71,8 +75,9 @@ plot_switching_rate(SR)
 
 plot_state_lifetimes(LTmean)
 
-plot_statewise_spectra(f, p, states)
+plot_statewise_spectra(f, p, K)
+
+plot_statewise_average_spectra(f, p)
 
 
 print("\n### Plotting done for file: ", npz_file_path)
-"""

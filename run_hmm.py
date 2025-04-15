@@ -9,7 +9,7 @@ from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n
 # 1. PARAMETERS & PATHS
 # ===========================
 
-job_id = '_job_source_1304v3-testing-spectra-min'  # Change to avoid overwriting the files
+job_id = '_job_source_1504v1-testing-dual-estimate'  # Change to avoid overwriting the files
 
 
 # Read the subject txt file
@@ -190,6 +190,28 @@ hmm_path = fname.tde_hmm_path
 filename = "latest-tde-hmm-group-pca-09-lags15-complete.pkl"
 glhmm.io.save_hmm(hmm, filename, directory=hmm_path)
 
+print("\n------------- Dual estimation begins -------------\n")
+
+# Assumptions:
+    # data        = shape (T_total, n_parcels)
+    # indices     = shape (2, 2), one row per subject
+    # Gamma_tde   = shape (T_total, K)
+
+subject_hmms = []
+for i, (start, end) in enumerate(indices):
+    data_subject = data[start:end, :]
+    Gamma_subject = Gamma_tde[start:end, :]
+    subject_indices = np.array([[0, end - start]])
+
+    hmm_dual = hmm.dual_estimate(
+        X=None,
+        Y=data_subject,
+        indices=subject_indices,
+        Gamma=Gamma_subject
+    )
+    subject_hmms.append(hmm_dual)
+
+print("\n------------- Dual estimation finished -------------\n")
 
 # ===========================
 # 4. OUTPUT EXTRACTION & VISUALISATION
@@ -282,6 +304,7 @@ print("\n------------- Output extraction finished -------------\n")
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 np.savez(npz_file_path,
          model=hmm,
+         dual_estimates=subject_hmms,
          active_states=active_K,
          gamma=Gamma,
          spectra_min=spectra_min,

@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from glhmm import utils, graphics
+from glhmm import graphics
 from config import fname
 import pandas as pd
+from scipy.stats import sem
 
 # ---------------------------
 # VISUALISATION FUNCTIONS
@@ -71,11 +72,7 @@ def plot_transition_probabilities(hmm):
 
 def plot_state_covariances(state_FC, K):
     """
-    Retrieve and plot the state covariance matrices (time-varying functional connectivity).
-    
-    Parameters:
-        hmm: the trained HMM object.
-        q: number of features (e.g., parcels/channels) in the data.
+    Plot the state covariance matrices (time-varying functional connectivity).
     """
     cmap = "coolwarm"
     
@@ -89,6 +86,40 @@ def plot_state_covariances(state_FC, K):
         plt.title("State covariance\nstate #%s" % (k + 1))
     plt.subplots_adjust(hspace=0.7, wspace=0.8)
     plt.show()
+    
+    
+
+def plot_state_means(means):
+    """
+    Plot HMM state means as a 2D heatmap.
+
+    Parameters
+    * means : np.ndarray
+        Array of shape (n_parcels, n_states)
+    """
+    
+    n_parcels, n_states = means.shape
+    cmap = "coolwarm"
+
+    plt.figure(figsize=(8, 10))
+    im = plt.imshow(means, cmap=cmap, interpolation="none", aspect="auto")
+
+    plt.colorbar(im, label='Activation level')
+    plt.title("State mean activation")
+
+    # Set x-ticks (states)
+    plt.xticks(ticks=np.arange(n_states), labels=[f"{i+1}" for i in range(n_states)])
+    plt.xlabel('State')
+
+    # Fewer y-ticks if too many parcels
+    step = 100 if n_parcels > 100 else 10
+    plt.yticks(ticks=np.arange(0, n_parcels, step))
+    plt.ylabel('Brain region')
+
+    plt.tight_layout()
+    plt.show()
+
+
     
 
 
@@ -158,15 +189,53 @@ def plot_state_lifetimes(LTmean):
         save_path=None)
     
 def plot_statewise_spectra(f, p, K):
+    # Ensure p has 4 dimensions: (n_subjects, n_freq, n_channels, n_states)
+    if p.ndim == 3:  # likely (n_freq, n_channels, n_states)
+        p = np.expand_dims(p, axis=0)
+    elif p.ndim == 2:  # (n_freq, n_channels)
+        p = np.expand_dims(np.expand_dims(p, axis=0), axis=-1)
 
-    mean_p = p.mean(axis=0)  # average across subjects
-    
+    mean_p = p.mean(axis=0)  # (n_freq, n_channels, n_states)
+
     for k in range(K):
         plt.figure()
         plt.plot(f, mean_p[:, :, k])
-        plt.title(f"State {k+1} - Power spectra (all parcels)")
+        plt.title(f"State {k+1} - Power Spectra (all parcels)")
         plt.xlabel("Frequency (Hz)")
         plt.ylabel("Power")
         plt.grid(True)
+        plt.tight_layout()
         plt.show()
+        
+        
+
+def plot_statewise_average_spectra(f, p):
+    """
+    Plot one figure per state showing the mean power spectrum across parcels.
+    """
+    while p.ndim < 4:
+        p = np.expand_dims(p, axis=0)
+        
+    n_subjects, n_freq, n_parcels, n_states = p.shape
+
+    # Compute mean and SEM over subjects for each state
+    mean_spectra = p.mean(axis=2)  # mean over parcels → (n_subjects, n_freq, n_states)
+    mean_over_subjects = mean_spectra.mean(axis=0)  # (n_freq, n_states)
+    sem_over_subjects = sem(mean_spectra, axis=0)  # (n_freq, n_states)
+
+    # Plot one figure per state
+    for k in range(n_states):
+        plt.figure(figsize=(8, 5))
+        plt.plot(f, mean_over_subjects[:, k], label=f"State {k+1}", color=f"C{k}")
+        plt.fill_between(f,
+                         mean_over_subjects[:, k] - sem_over_subjects[:, k],
+                         mean_over_subjects[:, k] + sem_over_subjects[:, k],
+                         alpha=0.3, color=f"C{k}")
+        plt.title(f"State {k+1} - Mean Power Spectrum")
+        plt.xlabel("Frequency (Hz)")
+        plt.ylabel("Power")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
 
