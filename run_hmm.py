@@ -9,7 +9,7 @@ from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n
 # 1. PARAMETERS & PATHS
 # ===========================
 
-job_id = '_job_source_1504v1-testing-dual-estimate'  # Change to avoid overwriting the files
+job_id = '_job_source_2104v1_testing_files'  # Change to avoid overwriting the files
 
 
 # Read the subject txt file
@@ -105,9 +105,7 @@ print("PCA components for TDE-HMM: ", n_pca) # n_pca=0.9
 data_tde, indices_tde = preproc.build_data_tde(
     data_processed,
     indices_new,
-    embeddedlags,
-    #pca=n_pca,
-    #standardise_pc=True
+    embeddedlags
 )
 
 """
@@ -165,8 +163,7 @@ np.random.seed(123)
 """
 options = {
     "gpu_acceleration": 1,  # Enable GPU when >= 1
-    "gpuChunks": 1,         # Split data if needed for large datasets         
-    "tol": 1e-5
+    "gpuChunks": 1          # Split data if needed for large datasets         
 }
 
 
@@ -179,6 +176,7 @@ options = {
     "initcyc": 1,           # To make the training quicker - leave by default if not just testing
     "cyc": 1                # To make the training quicker - leave by default if not just testing
 }
+
 
 
 Gamma_tde, Xi, FE = hmm.train(X=None, Y=data_tde, indices=indices_tde, options=options)
@@ -294,6 +292,12 @@ print("\n------------- Output extraction finished -------------\n")
 # Save the HMM object and the key outputs to an npz file.
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 
+npz_dir = os.path.dirname(npz_file_path)
+
+if not os.path.exists(npz_dir):
+    os.makedirs(npz_dir, exist_ok=True)
+
+
 np.savez(npz_file_path,
          model=hmm,
          dual_estimates=hmm_dual,
@@ -316,6 +320,11 @@ np.savez(npz_file_path,
 print("\n >>> Group TDE-HMM results saved to ", npz_file_path)
 
 dual_file_path = fname.hmm_dual_ob(job_id=job_id)
+
+dual_dir = os.path.dirname(dual_file_path)
+
+if not os.path.exists(dual_dir):
+    os.makedirs(dual_dir, exist_ok=True)
 
 np.savez(dual_file_path,
          dual_estimates=hmm_dual,
