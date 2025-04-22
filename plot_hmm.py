@@ -24,7 +24,10 @@ import numpy as np
 #job_id = '_job_source_0604v1-testing-pca'  
 # job_id = '_job_source_1304v1-testing-spectra' # sub-16C only. Spectral analysis done.
 #job_id = '_job_source_1304v2-testing-cov' # sub-16C only. spectral, means and cov orig space done.
-job_id = '_job_source_1304v3-testing-spectra-min' 
+#job_id = '_job_source_1304v3-testing-spectra-min' 
+#job_id = '_job_source_2104v1_testing_files' 
+#job_id = '_job_source_2204v1_pca09' # short run
+job_id = '_job_source_2204v2_pca09' # complete run
 
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 
@@ -78,6 +81,5 @@ plot_state_lifetimes(LTmean)
 plot_statewise_spectra(f, p, K)
 
 plot_statewise_average_spectra(f, p)
-
 
 print("\n### Plotting done for file: ", npz_file_path)

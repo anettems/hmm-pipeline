@@ -9,7 +9,7 @@ from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n
 # 1. PARAMETERS & PATHS
 # ===========================
 
-job_id = '_job_source_2104v1_testing_files'  # Change to avoid overwriting the files
+job_id = '_job_source_2204v2_pca09'  # Change to avoid overwriting the files
 
 
 # Read the subject txt file
@@ -64,12 +64,9 @@ n_timepoints, n_subjects, n_channels = data.shape[0], indices.shape[0], data.sha
 # ===========================
 
 
-# 3 min dataa?
-
-
 # Preprocess the data
 # The preprocess_data function expects (data, indices) and returns the (processed_data, _)
-data_processed, indices_new, log = preproc.preprocess_data(data, 
+data_processed, indices_new, log1 = preproc.preprocess_data(data, 
                                                            indices, 
                                                            fs=sfreq, 
                                                            dampen_extreme_peaks=None, 
@@ -78,16 +75,16 @@ data_processed, indices_new, log = preproc.preprocess_data(data,
                                                            detrend=False,
                                                            onpower=False,
                                                            onphase=False,
-                                                           pca=n_pca,
-                                                           exact_pca=True,
                                                            ica=None,
-                                                           post_standardise=True,
                                                            #downsample=100
                                                            )
 print("\nData preprocessed.")
 print("Data shape:", data_processed.shape)
 print("Indices shape:", indices_new.shape)
 
+log1["icamodel"] = None # Adding this information in the preproclog to avoid errors
+
+print("\nLog after preprocessing 1: ", log1)
 
 # Time-delay embedding
 
@@ -101,34 +98,36 @@ print("\nLags for TDE-HMM: ", embeddedlags)
 print("PCA components for TDE-HMM: ", n_pca) # n_pca=0.9
 
 # Build the time-delay embedded data
-
 data_tde, indices_tde = preproc.build_data_tde(
     data_processed,
     indices_new,
     embeddedlags
 )
 
-"""
-data_tde, indices_tde, pcamodel = preproc.build_data_tde(
-    data_processed,
-    indices_new,
-    embeddedlags,
-    #pca=n_pca,
-    #standardise_pc=True
-)"""
-
-# Adding this information in the preproclog to avoid errors
-#log["pca"] = n_pca # store number of pca components in logs
-#log["pcamodel"] = pcamodel # store pcamodel in logs
-log["icamodel"] = None
-
-# Convert indices to integer type
-#indices_tde = indices_tde.astype(int)
 
 print("\nData built for the time-delay embedded HMM model.")
 print("Concatenated & preprocessed TDE data shape:", data_tde.shape)
 print("Updated TDE time stamp indices shape:", indices_tde.shape)
+
+# Applying PCA
+
+data_tde, indices_tde, log2 = preproc.preprocess_data(data_tde, 
+                                                           indices_tde, 
+                                                           pca=n_pca,
+                                                           exact_pca=True,
+                                                           post_standardise=True
+                                                           )
     
+print("\nTDE data shape after PCA:", data_tde.shape)
+print("Updated TDE time stamp indices shape:", indices_tde.shape)
+
+print("\nLog after preprocessing 2: ", log2)
+
+# Combining preprocessing logs into one
+# keys coming from the second preprocessing step:
+keys_to_take = ["pca", "exact_pca", "p", "pcamodel", "post_standardise"]
+log = log1.copy()                    # start from preprocessing #1
+log.update({k: log2[k] for k in keys_to_take})
 
 # ===========================
 # 4. INITIALISE & TRAIN THE HMM
@@ -154,13 +153,11 @@ print(hmm.hyperparameters)
 
 # Train the HMM.
 
-# dual estimation glhmm paperista
-
 print("\n------------- TDE-HMM model training begins -------------\n")
 # Set a seed for reproducibility
 np.random.seed(123)
 
-"""
+
 options = {
     "gpu_acceleration": 1,  # Enable GPU when >= 1
     "gpuChunks": 1          # Split data if needed for large datasets         
@@ -177,7 +174,7 @@ options = {
     "cyc": 1                # To make the training quicker - leave by default if not just testing
 }
 
-
+"""
 
 Gamma_tde, Xi, FE = hmm.train(X=None, Y=data_tde, indices=indices_tde, options=options)
 
@@ -185,7 +182,7 @@ print("\n------------- TDE-HMM model trained-------------\n")
 
 # Saving the trained HMM model with GLHMM saving function
 hmm_path = fname.tde_hmm_path
-filename = "latest-tde-hmm-group-pca-09-lags15-complete.pkl"
+filename = "latest-tde-hmm-group-complete.pkl"
 glhmm.io.save_hmm(hmm, filename, directory=hmm_path)
 
 print("\n------------- Dual estimation begins -------------\n")

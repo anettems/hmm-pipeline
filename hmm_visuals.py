@@ -4,6 +4,7 @@ from glhmm import graphics
 from config import fname
 import pandas as pd
 from scipy.stats import sem
+import seaborn as sns 
 
 # ---------------------------
 # VISUALISATION FUNCTIONS
@@ -162,31 +163,58 @@ def plot_switching_rate(SR):
         title='State Switching Rates',
         show_legend=True,
         num_x_ticks=12,
-        num_y_ticks=3,
+        num_y_ticks=11,
         pad_y_spine=None,
         save_path=None)
+
+
 
 def plot_state_lifetimes(LTmean):
-    """
-    Plot the dwell times (state lifetimes) for each state.
+    LTmean = np.asarray(LTmean)
+    n_subj, n_states = LTmean.shape
 
-    """
+    # --- basic figure set‑up -------------------------------------------------
+    fig, ax = plt.subplots(figsize=(8, 4))
 
-    graphics.plot_state_lifetimes(
-        LTmean,  # Use LTmed or LTmax to plot those instead
-        figsize=(8, 4),
-        fontsize_ticks=12,
-        fontsize_labels=14,
-        fontsize_title=16,
-        width=0.18,
-        xlabel='Subject',
-        ylabel='Lifetime',
-        title='State Lifetimes (Mean)',
-        show_legend=True,
-        num_x_ticks=12,
-        num_y_ticks=2,
-        pad_y_spine=None,
-        save_path=None)
+    # Bar geometry
+    total_width   = 0.8                    # total width allotted to one subject
+    bar_width     = total_width / n_states
+    x_centres     = np.arange(n_subj)      # one tick per subject
+
+    # Pleasant, non‑white colours
+    palette = sns.color_palette('tab10', n_states)   # or e.g. 'Set2', 'Paired', …
+
+    # Plot one bar per state * per subject
+    for k in range(n_states):
+        ax.bar(
+            x_centres + (k - (n_states-1)/2)*bar_width,   # horizontal offset
+            LTmean[:, k],
+            width = bar_width,
+            color = palette[k],
+            label = f"State {k+1}"
+        )
+
+    # --- cosmetics -----------------------------------------------------------
+    ax.set_xlabel("Subject")
+    ax.set_ylabel("Lifetime (s)")
+    ax.set_title("State Lifetimes (Mean)")
+
+    # X ticks as 1, 2, 3 … instead of 0‑based
+    ax.set_xticks(x_centres)
+    ax.set_xticklabels(np.arange(1, n_subj+1))
+
+    # Y‑axis: start at 0 and leave 10 % head‑room
+    ymax = np.nanmax(LTmean) * 1.1
+    ax.set_ylim(0, ymax)
+
+    # Optional: put nice, evenly spaced ticks (e.g. every 0.5 s)
+    step = 0.5 if ymax < 5 else 2
+    ax.set_yticks(np.arange(0, ymax+step, step))
+
+    ax.legend(frameon=False, fontsize=10, ncol=2)
+    sns.despine()           # cleaner look; remove if you prefer full spines
+    plt.tight_layout()
+    plt.show()
     
 def plot_statewise_spectra(f, p, K):
     # Ensure p has 4 dimensions: (n_subjects, n_freq, n_channels, n_states)
