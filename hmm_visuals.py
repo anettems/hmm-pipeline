@@ -4,7 +4,6 @@ from glhmm import graphics
 from config import fname
 import pandas as pd
 from scipy.stats import sem
-import seaborn as sns 
 
 # ---------------------------
 # VISUALISATION FUNCTIONS
@@ -38,7 +37,7 @@ def plot_viterbi_path(vpath, indices):
         plt.show()
 
 
-def plot_transition_probabilities(hmm):
+def plot_transition_probabilities(hmm): 
     """
     Plot the HMM's transition probability matrix (both original and without self-transitions).
     
@@ -47,6 +46,7 @@ def plot_transition_probabilities(hmm):
     """
     TP = hmm.P.copy()
     cmap = "coolwarm"
+    K = TP.shape[0]
     
     plt.figure(figsize=(7, 4))
     
@@ -56,6 +56,8 @@ def plot_transition_probabilities(hmm):
     plt.title("Transition Probabilities")
     plt.xlabel("To State")
     plt.ylabel("From State")
+    plt.xticks(ticks=np.arange(K), labels=np.arange(1, K+1))
+    plt.yticks(ticks=np.arange(K), labels=np.arange(1, K+1))
     plt.colorbar(fraction=0.046, pad=0.04)
     
     # Transition Probabilities without Self-Transitions
@@ -66,27 +68,29 @@ def plot_transition_probabilities(hmm):
     plt.title("Transition Probabilities\nwithout Self-Transitions")
     plt.xlabel("To State")
     plt.ylabel("From State")
+    plt.xticks(ticks=np.arange(K), labels=np.arange(1, K+1))
+    plt.yticks(ticks=np.arange(K), labels=np.arange(1, K+1))
     plt.colorbar(fraction=0.046, pad=0.04)
     
     plt.tight_layout()
     plt.show()
 
+
 def plot_state_covariances(state_FC, K):
     """
-    Plot the state covariance matrices (time-varying functional connectivity).
+    Plot one covariance matrix per figure, for each HMM state.
     """
     cmap = "coolwarm"
-    
-    plt.figure(figsize=(10, 8))
+
     for k in range(K):
-        plt.subplot(3, 2, k + 1)
+        plt.figure(figsize=(6, 5))
         plt.imshow(state_FC[:, :, k], cmap=cmap)
         plt.xlabel("Brain region")
         plt.ylabel("Brain region")
         plt.colorbar()
-        plt.title("State covariance\nstate #%s" % (k + 1))
-    plt.subplots_adjust(hspace=0.7, wspace=0.8)
-    plt.show()
+        plt.title(f"State Covariance - State #{k + 1}")
+        plt.tight_layout()
+        plt.show()
     
     
 
@@ -146,75 +150,22 @@ def plot_fractional_occupancy(FO):
         pad_y_spine=None,
         save_path=None)
 
+
 def plot_switching_rate(SR):
     """
     Plot the switching rate, which indicates how quickly subjects switch between states.
 
     """
-    graphics.plot_switching_rates(
-        SR,
-        figsize=(8, 4),
-        fontsize_ticks=12,
-        fontsize_labels=14,
-        fontsize_title=16,
-        width=0.18,
-        xlabel='Subject',
-        ylabel='Switching Rate',
-        title='State Switching Rates',
-        show_legend=True,
-        num_x_ticks=12,
-        num_y_ticks=11,
-        pad_y_spine=None,
-        save_path=None)
+    graphics.plot_switching_rates(SR, num_x_ticks=SR.shape[0])
+
 
 
 
 def plot_state_lifetimes(LTmean):
-    LTmean = np.asarray(LTmean)
-    n_subj, n_states = LTmean.shape
-
-    # --- basic figure set‑up -------------------------------------------------
-    fig, ax = plt.subplots(figsize=(8, 4))
-
-    # Bar geometry
-    total_width   = 0.8                    # total width allotted to one subject
-    bar_width     = total_width / n_states
-    x_centres     = np.arange(n_subj)      # one tick per subject
-
-    # Pleasant, non‑white colours
-    palette = sns.color_palette('tab10', n_states)   # or e.g. 'Set2', 'Paired', …
-
-    # Plot one bar per state * per subject
-    for k in range(n_states):
-        ax.bar(
-            x_centres + (k - (n_states-1)/2)*bar_width,   # horizontal offset
-            LTmean[:, k],
-            width = bar_width,
-            color = palette[k],
-            label = f"State {k+1}"
-        )
-
-    # --- cosmetics -----------------------------------------------------------
-    ax.set_xlabel("Subject")
-    ax.set_ylabel("Lifetime (s)")
-    ax.set_title("State Lifetimes (Mean)")
-
-    # X ticks as 1, 2, 3 … instead of 0‑based
-    ax.set_xticks(x_centres)
-    ax.set_xticklabels(np.arange(1, n_subj+1))
-
-    # Y‑axis: start at 0 and leave 10 % head‑room
-    ymax = np.nanmax(LTmean) * 1.1
-    ax.set_ylim(0, ymax)
-
-    # Optional: put nice, evenly spaced ticks (e.g. every 0.5 s)
-    step = 0.5 if ymax < 5 else 2
-    ax.set_yticks(np.arange(0, ymax+step, step))
-
-    ax.legend(frameon=False, fontsize=10, ncol=2)
-    sns.despine()           # cleaner look; remove if you prefer full spines
-    plt.tight_layout()
-    plt.show()
+    graphics.plot_state_lifetimes(LTmean, num_x_ticks=LTmean.shape[0], ylabel='Mean lifetime')
+    
+    
+    
     
 def plot_statewise_spectra(f, p, K):
     # Ensure p has 4 dimensions: (n_subjects, n_freq, n_channels, n_states)
