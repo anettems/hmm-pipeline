@@ -1,3 +1,23 @@
+"""
+plot_hmm.py
+
+This script loads a trained TDE-HMM model output from a .npz file and generates a set of plots
+to visualize the group-level brain dynamics.
+
+### It fetches the TDE-HMM model based on job_id specified in settings_hmm_beta.py.
+
+### Visualized plots:
+- Viterbi state sequences per subject
+- Transition probability matrices
+- State-specific functional connectivity (covariance matrices)
+- State mean activation patterns
+- Fractional occupancy and switching rate per subject
+- Mean state lifetimes
+- Statewise power spectra (per parcel and averaged across parcels)
+
+### Make sure to download the needed plots manually.
+"""
+
 from hmm_visuals import (
     plot_viterbi_path,
     plot_transition_probabilities,
@@ -10,8 +30,7 @@ from hmm_visuals import (
     plot_state_means)
 from config import fname
 import numpy as np
-
-job_id = '_job_source_2204v2_pca09'
+from settings_hmm_beta import job_id
 
 npz_file_path = fname.tde_hmm_ob(job_id=job_id)
 
@@ -52,18 +71,18 @@ plot_viterbi_path(vpath, indices)
 
 plot_transition_probabilities(hmm)
 
-"""plot_state_covariances(covs, K)
+plot_state_covariances(covs, K)
 
-plot_state_means(means)"""
+plot_state_means(means)
 
 plot_fractional_occupancy(FO)
 
 plot_switching_rate(SR)
 
 plot_state_lifetimes(LTmean)
-"""
+
 plot_statewise_spectra(f, p, K)
 
-plot_statewise_average_spectra(f, p)"""
+plot_statewise_average_spectra(f, p)
 
 print("\n### Plotting done for file: ", npz_file_path)

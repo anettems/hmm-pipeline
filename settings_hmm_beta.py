@@ -76,5 +76,5 @@ n_labels = 450  # Number of labels in cortical parcellation (e.g., 450 = both he
 lag = 15 # Lag for time-delay embedding # 3, 7, 10, 20
 n_pca = 0.9  # Variance threshold for PCA dimensionality reduction
 K = 6  # Number of states for the HMM
-job_id = "_job_source_2"  # Identifier for saving HMM results
+job_id = '_job_source_2204v2_pca09' # Identifier for saving HMM results
 pc_type = 'aparc_sub'  # Parcellation type for source extraction

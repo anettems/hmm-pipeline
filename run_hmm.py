@@ -1,16 +1,37 @@
+"""
+run_hmm.py
+
+This script runs the full Time-Delay Embedded Hidden Markov Model (TDE-HMM) pipeline on preprocessed 
+source-reconstructed MEG data. It performs preprocessing, time-delay embedding, PCA, HMM training, 
+dual estimation, and extracts various statewise outputs including:
+- State time courses (Gamma, Viterbi path)
+- Transition probabilities
+- State means and covariances
+- Spectral profiles using multitaper analysis
+- Summary metrics: fractional occupancy, switching rates, state lifetimes
+
+Outputs are saved as .npz files for later analysis and visualization.
+
+INSTRUCTIONS FOR USE:
+---------------------
+## Ensure the .npy files per subject and session have been created using `04_extract_npyfile.py`.
+## Adjust the `job_id` in `settings_hmm_beta.py` to define a unique ID for output saving.
+## Confirm or modify key parameters in `settings_hmm_beta.py` (e.g., `K`, `lag`, `n_pca`).
+## Optional: Uncomment or adjust `downsample` inside the `preprocess_data` call if needed.
+
+This script is intended to be run once per analysis configuration to produce a group-level TDE-HMM model.
+"""
+
 import os
 import numpy as np
 import pandas as pd
 from glhmm import glhmm, preproc, utils, spectral
 from config import fname
-from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n_pca)
+from settings_hmm_beta import (lfreq, hfreq, sfreq, pc_type, sessions, lag, K, n_pca, job_id)
 
 # ===========================
 # 1. PARAMETERS & PATHS
 # ===========================
-
-job_id = '_job_source_2204v2_pca09'  # Change to avoid overwriting the files
-
 
 # Read the subject txt file
 df_subjects = pd.read_csv(fname.subjects_txt, names=["subject"])
