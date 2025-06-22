@@ -212,9 +212,7 @@ print("\n------------- Dual estimation begins -------------\n")
 hmm_dual = hmm.dual_estimate(
     X=None,
     Y=data_tde,
-    indices=indices_tde,
-    Gamma=Gamma_tde
-)
+    indices=indices_tde)
 
 
 print("\n------------- Dual estimation finished -------------\n")
@@ -266,6 +264,8 @@ for k in range(K):
 
 
 print("Covariances computed in original space")
+
+
 # Spectra
 
 fpass = [lfreq, hfreq] # Frequency range for spectral estimation

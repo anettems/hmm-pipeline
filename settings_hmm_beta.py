@@ -13,7 +13,6 @@ Instructions:
 -------------
 - Adjust the filtering, ICA, and model parameters according to your analysis needs.
 - Specify task names, sessions, runs, and rejection limits based on your dataset.
-- Update the state mapping if you are using different naming conventions for states.
 
 """
 
@@ -76,5 +75,5 @@ n_labels = 450  # Number of labels in cortical parcellation (e.g., 450 = both he
 lag = 15 # Lag for time-delay embedding # 3, 7, 10, 20
 n_pca = 0.9  # Variance threshold for PCA dimensionality reduction
 K = 6  # Number of states for the HMM
-job_id = '_job_source_2204v2_pca09' # Identifier for saving HMM results
+job_id = '_job_source_2206_pca09' # Identifier for saving HMM results
 pc_type = 'aparc_sub'  # Parcellation type for source extraction
