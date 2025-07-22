@@ -27,7 +27,8 @@ from hmm_visuals import (
     plot_state_lifetimes,
     plot_statewise_spectra,
     plot_statewise_average_spectra,
-    plot_state_means)
+    plot_state_means,
+    plot_statewise_average_spectra_one_figure)
 from config import fname
 import numpy as np
 from settings_hmm_beta import job_id
@@ -84,5 +85,7 @@ plot_state_lifetimes(LTmean)
 plot_statewise_spectra(f, p, K)
 
 plot_statewise_average_spectra(f, p)
+
+#plot_statewise_average_spectra_one_figure(f, p)
 
 print("\n### Plotting done for file: ", npz_file_path)

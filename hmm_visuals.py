@@ -218,3 +218,61 @@ def plot_statewise_average_spectra(f, p):
         plt.show()
 
 
+def plot_statewise_average_spectra_one_figure(f, p):
+    """
+    Plot mean power spectra (±SEM) for all states in one figure.
+
+    Parameters
+    ----------
+    f : array_like
+        Frequency axis (Hz), shape (n_freq,).
+    p : ndarray
+        Power spectra with shape
+        (n_subjects, n_freq, n_parcels, n_states) or any subset;
+        dimensions are automatically expanded as needed.
+    """
+    # Ensure p has four dimensions: (subjects, freq, parcels, states)
+    while p.ndim < 4:
+        p = np.expand_dims(p, axis=0)
+
+    n_subjects, n_freq, n_parcels, n_states = p.shape
+    assert n_states == 6, "Expected exactly 6 states."
+
+    # Average across parcels, then subjects
+    mean_spectra = p.mean(axis=2)                 # (subjects, freq, states)
+    mean_over_subjects = mean_spectra.mean(axis=0)    # (freq, states)
+    sem_over_subjects  = sem(mean_spectra, axis=0)    # (freq, states)
+
+    fig, axes = plt.subplots(3, 2, figsize=(10, 8), sharex=True)
+    axes = axes.flatten()  # easier indexing
+
+    for k in range(n_states):
+        ax = axes[k]
+        ax.plot(
+            f,
+            mean_over_subjects[:, k],
+            label=f"State {k+1}",
+            color=f"C{k}",
+            linewidth=1.8,
+        )
+        ax.fill_between(
+            f,
+            mean_over_subjects[:, k] - sem_over_subjects[:, k],
+            mean_over_subjects[:, k] + sem_over_subjects[:, k],
+            color=f"C{k}",
+            alpha=0.3,
+        )
+        ax.set_title(f"State {k+1}")
+        ax.grid(True)
+        ax.set_xlabel("Frequency (Hz)")
+        ax.set_ylabel("Power")
+
+    # If you ever have fewer than 6 states, turn off spare axes
+    for ax in axes[n_states:]:
+        ax.axis("off")
+
+    fig.suptitle("State-wise Mean Power Spectra",
+                 y=0.95, fontsize=14)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    plt.show()
+
