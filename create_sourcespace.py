@@ -21,7 +21,7 @@ import sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(parent_dir)
 
-from config import (fname, subjects_dir_ave)
+from config import (fname, subjects_dir)
 from settings_hmm_beta import (spacing, N_JOBS)
 
 print("\n #### Starting source space creation for the template subject. #### \n")
@@ -54,7 +54,7 @@ if os.path.exists(fname.src(hmm_bids_dir=megdir, subject=subject,spacing=spacing
 else:
     subject_src = mne.setup_source_space(subject=subject, 
                                          spacing=spacing,
-                                         subjects_dir=subjects_dir_ave,
+                                         subjects_dir=subjects_dir,
                                          n_jobs=N_JOBS, 
                                          add_dist=True)
     mne.write_source_spaces(fname.src(hmm_bids_dir=megdir,

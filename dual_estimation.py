@@ -1,8 +1,7 @@
 from config import fname
 import numpy as np
-from glhmm import glhmm, utils, spectral
-
-job_id = '_job_source_2104v1_testing_files' 
+from glhmm import utils
+from settings_hmm_beta import job_id
 
 dual_file_path = fname.hmm_dual_ob(job_id=job_id)
 
@@ -53,9 +52,6 @@ print("Covariances computed in original space")
 
 means_dual = dual_hmm.get_means(orig_space=True)
 print("Dual state means computed\n")
-
-# State Power Spectra
-
 
 # Save .npz per subject
 
